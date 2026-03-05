@@ -1,0 +1,25 @@
+# Motor Lógico y de Agentes
+langchain>=0.1.0
+langgraph>=0.0.10
+
+# Inteligencia Artificial y Tensores (ISO 42001)
+torch>=2.0.0
+
+# Seguridad y Criptografía (ISO 27001)
+cryptography>=41.0.0
+
+# Conexiones Seguras a Bases de Datos
+psycopg2-binary>=2.9.0
+mysql-connector-python>=8.0.0
+
+# Calidad del Código y Pruebas Automatizadas (ISO 25010)
+pytest>=7.0.0
+bandit>=1.7.0
+
+# Ejemplos Full-Stack y APIs
+fastapi>=0.109.0
+uvicorn>=0.27.0
+
+# Herramientas de calidad (gratuitas)
+ruff>=0.3.0
+black>=24.0.0
