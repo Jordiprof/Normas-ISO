@@ -4,6 +4,12 @@ import psycopg2
 import mysql.connector
 # Importamos nuestro propio toolkit de seguridad creado en el paso anterior.
 from kit_iso.seguridad import ToolkitSeguridad
+# Importamos el logger para registrar eventos.
+from kit_iso import logger
+
+# Tablas y columnas permitidas (whitelist de seguridad ISO 27001 A.14.2).
+TABLAS_PERMITIDAS = {"usuarios", "registros", "auditorias", "documentos"}
+COLUMNAS_PERMITIDAS = {"datos", "contenido", "valor", "texto"}
 
 # Definimos la clase para manejar conexiones seguras a bases de datos.
 class BaseDatosSegura:
@@ -31,7 +37,7 @@ class BaseDatosSegura:
         # Si no es ninguno de los dos...
         else:
             # ...lanzamos un error para detener la ejecución.
-            raise ValueError("Tipo de base de datos no soportado por el toolkit.")
+            raise ValueError("Tipo de base de datos no ha soportado por el toolkit.")
 
     # Método para ejecutar consultas seguras (Evita Inyecciones SQL).
     def consulta_segura(self, query: str, parametros: tuple):
@@ -45,6 +51,16 @@ class BaseDatosSegura:
         cursor.close()
         # Devolvemos los datos obtenidos al usuario.
         return resultado
+
+    #  Método privado que valida tabla y columna contra la whitelist.
+    def _validar_identificadores(self, tabla: str, columna: str):
+        """Valida que tabla y columna estén en la whitelist (ISO 27001 A.14.2)."""
+        if tabla not in TABLAS_PERMITIDAS:
+            logger.error(f"Intento de acceso a tabla no permitida: '{tabla}'")
+            raise ValueError(f"Tabla '{tabla}' no permitida. Tablas válidas: {TABLAS_PERMITIDAS}")
+        if columna not in COLUMNAS_PERMITIDAS:
+            logger.error(f"Intento de acceso a columna no permitida: '{columna}'")
+            raise ValueError(f"Columna '{columna}' no permitida. Columnas válidas: {COLUMNAS_PERMITIDAS}")
         
     # Método para almacenar datos encriptados (renombrado a español, con mejoras).
     def almacenar_encriptado(self, tabla: str, columna: str, datos: str):
@@ -53,6 +69,7 @@ class BaseDatosSegura:
         # Intentamos la operación con manejo de errores (mejora: robustez).
         try:
             # Encriptamos los datos usando el módulo de seguridad.
+            self._validar_identificadores(tabla, columna)
             encriptado = self.seguridad.encriptar_datos(datos)  # Asume método renombrado en seguridad.
             # Creamos la query SQL parametrizada (segura contra inyecciones).
             query = f"INSERT INTO {tabla} ({columna}) VALUES (%s)"
@@ -60,6 +77,8 @@ class BaseDatosSegura:
             self.consulta_segura(query, (encriptado,))
             # Registramos éxito.
             logger.info(f"Datos encriptados almacenados en {tabla}.{columna}")
+        except ValueError:
+            raise    
         # Si hay error...
         except Exception as e:
             # Registramos el error para auditoría.
