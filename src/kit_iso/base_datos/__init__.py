@@ -1,87 +1,123 @@
-# Importamos la librería para conectarnos a bases de datos PostgreSQL.
-import psycopg2
-# Importamos la librería para conectarnos a bases de datos MySQL.
-import mysql.connector
-# Importamos nuestro propio toolkit de seguridad creado en el paso anterior.
-from kit_iso.seguridad import ToolkitSeguridad
-# Importamos el logger para registrar eventos.
-from kit_iso import logger
+"""BaseDatosSegura — acceso a PostgreSQL/MySQL con parametrización obligatoria y datos encriptados (ISO 27001)."""
 
-# Tablas y columnas permitidas (whitelist de seguridad ISO 27001 A.14.2).
+import logging
+
+import mysql.connector
+import psycopg2
+
+# Import relativo: evita la dependencia circular con kit_iso/__init__.py.
+from ..seguridad import ToolkitSeguridad
+
+logger = logging.getLogger(__name__)
+
+# Whitelist por defecto de identificadores SQL (ISO 27001 A.14.2).
+# Los identificadores no se pueden parametrizar, así que se validan contra esta lista.
 TABLAS_PERMITIDAS = {"usuarios", "registros", "auditorias", "documentos"}
 COLUMNAS_PERMITIDAS = {"datos", "contenido", "valor", "texto"}
 
-# Definimos la clase para manejar conexiones seguras a bases de datos.
+
 class BaseDatosSegura:
-    # Método inicializador que recibe los credenciales de la base de datos.
-    def __init__(self, tipo_bd: str, host: str, usuario: str, password: str, nombre_bd: str):
-        # Guardamos el tipo de base de datos (ej: 'postgres' o 'mysql').
+    """Conexión segura a BD. Uso recomendado como context manager:
+
+        with BaseDatosSegura("postgres", host, usuario, password, nombre_bd) as db:
+            db.almacenar_encriptado("registros", "contenido", "dato sensible")
+
+    Lecturas → ``consulta_segura`` · Escrituras → ``ejecutar_segura`` (hace commit).
+    """
+
+    def __init__(
+        self,
+        tipo_bd: str,
+        host: str,
+        usuario: str,
+        password: str,
+        nombre_bd: str,
+        *,
+        tablas_permitidas: set[str] | None = None,
+        columnas_permitidas: set[str] | None = None,
+        seguridad: ToolkitSeguridad | None = None,
+    ):
         self.tipo_bd = tipo_bd
-        # Iniciamos la variable de conexión vacía (None).
+        self.tablas_permitidas = set(tablas_permitidas) if tablas_permitidas else TABLAS_PERMITIDAS
+        self.columnas_permitidas = (
+            set(columnas_permitidas) if columnas_permitidas else COLUMNAS_PERMITIDAS
+        )
+        # Se puede inyectar un ToolkitSeguridad ya configurado (p. ej. con clave explícita).
+        self.seguridad = seguridad or ToolkitSeguridad()
         self.conexion = None
-        # Instanciamos nuestras herramientas de encriptación.
-        self.seguridad = ToolkitSeguridad()
-        # Llamamos al método interno para establecer la conexión real.
-        self.conectar(host, usuario, password, nombre_bd)
+        self._conectar(host, usuario, password, nombre_bd)
 
-    # Método interno para abrir la conexión.
-    def conectar(self, host, usuario, password, nombre_bd):
-        # Si el tipo indicado es postgres...
-        if self.tipo_bd == 'postgres':
-            # ...usamos psycopg2 para establecer la conexión.
-            self.conexion = psycopg2.connect(host=host, user=usuario, password=password, dbname=nombre_bd)
-        # Si el tipo indicado es mysql...
-        elif self.tipo_bd == 'mysql':
-            # ...usamos mysql.connector para conectar.
-            self.conexion = mysql.connector.connect(host=host, user=usuario, password=password, database=nombre_bd)
-        # Si no es ninguno de los dos...
+    def _conectar(self, host, usuario, password, nombre_bd):
+        if self.tipo_bd == "postgres":
+            self.conexion = psycopg2.connect(
+                host=host, user=usuario, password=password, dbname=nombre_bd
+            )
+        elif self.tipo_bd == "mysql":
+            self.conexion = mysql.connector.connect(
+                host=host, user=usuario, password=password, database=nombre_bd
+            )
         else:
-            # ...lanzamos un error para detener la ejecución.
-            raise ValueError("Tipo de base de datos no ha soportado por el toolkit.")
+            raise ValueError(
+                f"Tipo de base de datos no soportado: '{self.tipo_bd}' (usa 'postgres' o 'mysql')."
+            )
 
-    # Método para ejecutar consultas seguras (Evita Inyecciones SQL).
+    # ── Context manager: garantiza que la conexión se cierra ──────────────
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.cerrar()
+
+    def cerrar(self):
+        if self.conexion is not None:
+            self.conexion.close()
+            self.conexion = None
+
+    # ── Operaciones ────────────────────────────────────────────────────────
     def consulta_segura(self, query: str, parametros: tuple):
-        # Creamos un 'cursor' que es el objeto que ejecuta comandos en la BD.
+        """SELECT parametrizado. Para escrituras usa ``ejecutar_segura``."""
         cursor = self.conexion.cursor()
-        # Ejecutamos la query pasando los parámetros de forma separada (parametrización).
-        cursor.execute(query, parametros)
-        # Obtenemos todos los resultados de la consulta.
-        resultado = cursor.fetchall()
-        # Cerramos el cursor para liberar recursos de memoria.
-        cursor.close()
-        # Devolvemos los datos obtenidos al usuario.
-        return resultado
-
-    #  Método privado que valida tabla y columna contra la whitelist.
-    def _validar_identificadores(self, tabla: str, columna: str):
-        """Valida que tabla y columna estén en la whitelist (ISO 27001 A.14.2)."""
-        if tabla not in TABLAS_PERMITIDAS:
-            logger.error(f"Intento de acceso a tabla no permitida: '{tabla}'")
-            raise ValueError(f"Tabla '{tabla}' no permitida. Tablas válidas: {TABLAS_PERMITIDAS}")
-        if columna not in COLUMNAS_PERMITIDAS:
-            logger.error(f"Intento de acceso a columna no permitida: '{columna}'")
-            raise ValueError(f"Columna '{columna}' no permitida. Columnas válidas: {COLUMNAS_PERMITIDAS}")
-        
-    # Método para almacenar datos encriptados (renombrado a español, con mejoras).
-    def almacenar_encriptado(self, tabla: str, columna: str, datos: str):
-        # Documentación: Almacena datos encriptados (A.10.1 de ISO 27001).
-        """Almacena datos encriptados de forma segura en la BD."""
-        # Intentamos la operación con manejo de errores (mejora: robustez).
         try:
-            # Encriptamos los datos usando el módulo de seguridad.
-            self._validar_identificadores(tabla, columna)
-            encriptado = self.seguridad.encriptar_datos(datos)  # Asume método renombrado en seguridad.
-            # Creamos la query SQL parametrizada (segura contra inyecciones).
-            query = f"INSERT INTO {tabla} ({columna}) VALUES (%s)"
-            # Ejecutamos la query segura.
-            self.consulta_segura(query, (encriptado,))
-            # Registramos éxito.
-            logger.info(f"Datos encriptados almacenados en {tabla}.{columna}")
-        except ValueError:
-            raise    
-        # Si hay error...
-        except Exception as e:
-            # Registramos el error para auditoría.
-            logger.error(f"Error al almacenar: {str(e)}")
-            # Lanzamos excepción amigable (integra usabilidad: feedback claro).
-            raise ValueError(f"No se pudo almacenar: {str(e)}. Verifica conexión.")
+            cursor.execute(query, parametros)
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+
+    def ejecutar_segura(self, query: str, parametros: tuple) -> int:
+        """INSERT/UPDATE/DELETE parametrizado con commit (rollback si falla).
+
+        Devuelve el número de filas afectadas.
+        """
+        cursor = self.conexion.cursor()
+        try:
+            cursor.execute(query, parametros)
+            self.conexion.commit()
+            return cursor.rowcount
+        except Exception:
+            self.conexion.rollback()
+            raise
+        finally:
+            cursor.close()
+
+    def _validar_identificadores(self, tabla: str, columna: str):
+        """Valida tabla y columna contra la whitelist (ISO 27001 A.14.2)."""
+        if tabla not in self.tablas_permitidas:
+            logger.error("Intento de acceso a tabla no permitida: '%s'", tabla)
+            raise ValueError(
+                f"Tabla '{tabla}' no permitida. Tablas válidas: {sorted(self.tablas_permitidas)}"
+            )
+        if columna not in self.columnas_permitidas:
+            logger.error("Intento de acceso a columna no permitida: '%s'", columna)
+            raise ValueError(
+                f"Columna '{columna}' no permitida. Columnas válidas: {sorted(self.columnas_permitidas)}"
+            )
+
+    def almacenar_encriptado(self, tabla: str, columna: str, datos: str):
+        """Encripta y persiste un dato (ISO 27001 A.10.1)."""
+        self._validar_identificadores(tabla, columna)
+        encriptado = self.seguridad.encriptar_datos(datos)
+        # Los identificadores no se pueden parametrizar en SQL: van validados contra
+        # la whitelist justo arriba; el valor sí va parametrizado.
+        query = f"INSERT INTO {tabla} ({columna}) VALUES (%s)"  # nosec B608
+        self.ejecutar_segura(query, (encriptado,))
+        logger.info("Datos encriptados almacenados en %s.%s", tabla, columna)

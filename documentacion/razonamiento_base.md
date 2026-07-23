@@ -17,8 +17,8 @@ prácticas que integra buenas prácticas normativas directamente en el código.
 | Norma | Área | Módulo del kit |
 |-------|------|----------------|
 | ISO 27001 | Seguridad de la información | `seguridad/` |
-| ISO 25010 | Calidad del software | `calidad/` |
-| ISO 9241 / 40500 (WCAG) | Usabilidad y accesibilidad | `usabilidad/`, `accesibilidad/` |
+| ISO 25010 / 9126 | Calidad del software (y métricas) | `calidad/` |
+| ISO 9241 / 14915 / 40500 (WCAG) | Usabilidad, interfaces multimedia y accesibilidad | `usabilidad/`, `accesibilidad/` |
 | ISO 42001 | Gestión de sistemas de IA | `ia/` |
 
 ---
@@ -47,12 +47,12 @@ Cuando Claude use este kit debe aplicar estos principios:
 - Encriptar cualquier dato sensible antes de persistirlo
 - Usar `ValidadorSeguridad.analizar_codigo()` antes de hacer commit
 
-**4.2 Calidad medible (ISO 25010)**
+**4.2 Calidad medible (ISO 25010 y 9126)**
 - Todo flujo crítico debe tener un test en `pruebas/`
 - Usar `medir_performance()` en funciones que puedan ser cuellos de botella
 - El código debe pasar `ruff` y `black` sin errores antes de considerarse listo
 
-**4.3 Usabilidad como contrato (ISO 9241)**
+**4.3 Usabilidad como contrato (ISO 9241 e ISO 14915)**
 - Los errores devueltos al usuario deben ser comprensibles, nunca stack traces crudos
 - `generar_feedback()` es el punto único de comunicación con el usuario final
 - `validar_input_usuario()` debe llamarse siempre antes de procesar cualquier entrada

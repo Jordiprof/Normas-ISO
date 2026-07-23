@@ -1,41 +1,51 @@
-# Importamos Fernet, que es un estándar de encriptación simétrica seguro.
-from cryptography.fernet import Fernet
-# Importamos el módulo de logging nativo de Python para registrar eventos.
-import logging
+"""ToolkitSeguridad — encriptación simétrica Fernet con clave gestionada fuera del código (ISO 27001)."""
 
-# Configuramos el sistema de logs para que muestre la hora, el nivel de alerta y el mensaje.
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-# Creamos un objeto 'logger' asociado a este archivo específico.
+import logging
+import os
+
+from cryptography.fernet import Fernet
+
 logger = logging.getLogger(__name__)
 
-# Definimos la clase principal para nuestras herramientas de seguridad.
-class ToolkitSeguridad:
-    # El método __init__ se ejecuta automáticamente al crear un objeto de esta clase.
-    def __init__(self):
-        # Generamos y guardamos una clave secreta en la variable 'self.key'.
-        self.key = self.generar_clave()
-        # Registramos en el log que el toolkit se ha iniciado (útil para auditorías ISO 27001).
-        logger.info("Toolkit de Seguridad inicializado correctamente.")
+# Variable de entorno donde vive la clave de encriptación.
+VAR_CLAVE = "KIT_ISO_CLAVE"
 
-    # Método para generar una clave criptográfica nueva.
-    def generar_clave(self) -> bytes:
-        # Usamos Fernet para generar una clave segura de 32 bytes en base64.
+
+class ToolkitSeguridad:
+    """Encripta y desencripta datos con una clave persistente.
+
+    La clave se toma del argumento ``clave`` o de la variable de entorno
+    ``KIT_ISO_CLAVE``. Nunca se genera una clave implícita: si cada proceso
+    generara la suya, todo lo encriptado sería irrecuperable tras un reinicio.
+    """
+
+    def __init__(self, clave: bytes | str | None = None):
+        clave = clave or os.getenv(VAR_CLAVE)
+        if not clave:
+            raise ValueError(
+                f"No hay clave de encriptación. Define la variable de entorno {VAR_CLAVE} "
+                "(genera una con ToolkitSeguridad.generar_clave()) o pasa clave= al constructor. "
+                "No se genera una clave implícita: los datos encriptados serían irrecuperables."
+            )
+        if isinstance(clave, str):
+            clave = clave.encode()
+        self._fernet = Fernet(clave)  # valida el formato de la clave al construir
+        logger.info("Toolkit de Seguridad inicializado.")
+
+    @staticmethod
+    def generar_clave() -> bytes:
+        """Genera una clave Fernet nueva.
+
+        Guárdala en tu gestor de secretos o en la variable de entorno
+        KIT_ISO_CLAVE. Si la pierdes, los datos encriptados con ella son
+        irrecuperables; si se expone, rota la clave y re-encripta.
+        """
         return Fernet.generate_key()
 
-    # Método para encriptar un texto (recibe un string, devuelve bytes).
     def encriptar_datos(self, datos: str) -> bytes:
-        # Creamos una instancia de Fernet usando nuestra clave secreta.
-        fernet = Fernet(self.key)
-        # Convertimos el string 'datos' a bytes (.encode()) y lo encriptamos.
-        datos_encriptados = fernet.encrypt(datos.encode())
-        # Registramos la acción (sin revelar el dato) para trazabilidad.
-        logger.info("Datos encriptados con éxito.")
-        # Devolvemos el resultado ilegible.
-        return datos_encriptados
+        token = self._fernet.encrypt(datos.encode())
+        logger.info("Datos encriptados.")  # nunca se loguea el dato en claro
+        return token
 
-    # Método para desencriptar (recibe bytes, devuelve el string original).
     def desencriptar_datos(self, encriptados: bytes) -> str:
-        # Creamos la instancia de Fernet con la misma clave.
-        fernet = Fernet(self.key)
-        # Desencriptamos y luego convertimos los bytes a string (.decode()).
-        return fernet.decrypt(encriptados).decode()
+        return self._fernet.decrypt(encriptados).decode()

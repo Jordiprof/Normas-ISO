@@ -10,27 +10,27 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      # ✅ PASO 1: Clonar el repositorio (faltaba completamente)
       - name: Clonar repositorio
         uses: actions/checkout@v4
 
-      # ✅ PASO 2: Instalar Python
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # ✅ PASO 3: Instalar dependencias
       - name: Instalar dependencias
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install -e .
 
-      # ✅ PASO 4: Ahora sí, linter y formatter
-      - name: Comprobar estilo con ruff
-        run: ruff check src/
+      - name: Linter (ruff)
+        run: ruff check src/ pruebas/
 
-      - name: Comprobar formato con black
-        run: black --check src/
+      - name: Formato (black)
+        run: black --check src/ pruebas/
 
-      # ✅ PASO 5: Tests al final
-      - name: Ejecutar pruebas
-        run: pytest
+      - name: Análisis de seguridad (bandit)
+        run: bandit -r src/ -ll
+
+      - name: Tests
+        run: pytest pruebas/ -v

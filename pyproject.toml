@@ -4,24 +4,38 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kit-iso"
-version = "0.1.0"
-description = "Toolkit para cumplimiento ISO"
+version = "1.0.0"
+description = "Controles técnicos automatizables para cumplimiento normativo (ISO 27001, 25010, 9241, 40500)"
+requires-python = ">=3.10"
 dependencies = [
-"langchain>=0.1.0", 
-"langgraph>=0.0.10", 
-"torch>=2.0.0", 
-"cryptography>=41.0.0", 
-"psycopg2-binary>=2.9.0", 
-"mysql-connector-python>=8.0.0", 
-"pytest>=7.0.0", 
-"bandit>=1.7.0", 
-"fastapi>=0.109.0", 
-"uvicorn>=0.27.0",
-"beautifulsoup4>=4.12.0"  # Para accesibilidad (ISO 40500)
+    "cryptography>=41.0.0",
+    "psycopg2-binary>=2.9.0",
+    "mysql-connector-python>=8.0.0",
+    "beautifulsoup4>=4.12.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "bandit>=1.7.0",
+    "ruff>=0.3.0",
+    "black>=24.0.0",
+    "coverage>=7.0.0",
+    "radon>=6.0.0",
+    "argon2-cffi>=23.0.0",
+    "bcrypt>=4.0.0",
+]
+demo = [
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+kit-iso = "kit_iso.cli:main"
+
 [tool.ruff]
-line-length = 88
+line-length = 100
 
 [tool.black]
-line-length = 88
+line-length = 100
