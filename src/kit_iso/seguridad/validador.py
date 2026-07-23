@@ -196,8 +196,9 @@ class ValidadorTLS:
             ctx = ssl.create_default_context()
             with socket.create_connection((host, puerto), timeout=timeout) as conn:
                 with ctx.wrap_socket(conn, server_hostname=host) as tls:
-                    cert = tls.getpeercert()
-                    subject = dict(x[0] for x in cert.get("subject", []))
+                    cert = tls.getpeercert() or {}
+                    # ssl tipa "subject" como tuplas anidadas que los stubs no estrechan.
+                    subject = dict(x[0] for x in cert.get("subject", []))  # type: ignore[misc]
                     version = tls.version()
                     resultado = {
                         "estado": "ok",

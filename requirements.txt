@@ -20,6 +20,7 @@ pytest>=7.0.0
 bandit>=1.7.0
 ruff>=0.3.0
 black>=24.0.0
+mypy>=1.8.0
 
 # Fase 2: Complejidad ciclomática (ISO 25010) y cobertura
 radon>=6.0.0

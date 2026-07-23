@@ -32,5 +32,8 @@ jobs:
       - name: Análisis de seguridad (bandit)
         run: bandit -r src/ -ll
 
+      - name: Tipos (mypy)
+        run: mypy
+
       - name: Tests
         run: pytest pruebas/ -v

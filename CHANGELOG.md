@@ -5,6 +5,28 @@ Versionado: [Semantic Versioning 2.0.0](https://semver.org/lang/es/)
 
 ---
 
+## [1.0.1] — 2026-07-16
+
+Pulido de empaquetado y documentación para publicación (sin cambios de comportamiento ni de API).
+
+### Añadido
+
+- **Metadata completa en `pyproject.toml`**: `readme`, `license` (SPDX `MIT`) + `license-files`, `authors`, `keywords`, `classifiers` (incl. `Typing :: Typed` y versiones de Python 3.10–3.13) y `[project.urls]` (Repository, Changelog). Antes la página de PyPI habría salido vacía.
+- **Marcador `py.typed`**: la librería ya enviaba type hints, pero ahora los **exporta** a los consumidores (PEP 561) — sus type checkers los aprovechan.
+- **Verificación de tipos con mypy**: config en `pyproject.toml` + paso en CI. La suite de tipos pasa limpia sobre los 16 módulos.
+- **Registros de decisión de arquitectura (ADR)** en `documentacion/adr/`: layout por norma, separación `_auditoria`/`cli`, clave Fernet persistente.
+- **Sección "Contrato público vs interno"** en el README: qué es API estable (clases validadoras, CLI) y qué es interno (`_auditoria`, prefijo `_`).
+
+### Corregido
+
+- **`LICENSE` roto**: era una plantilla a medio rellenar (`[Nombre Empresa]` + un comentario "buscar template" y el texto MIT truncado). Reemplazado por el texto MIT completo y válido.
+- **Bugs latentes de `None` detectados por mypy** (habrían petado en runtime en casos borde):
+  - `_auditoria._sin_docstrings`: `range()` recibía `end_lineno`, que la AST devuelve como `None` en algunos nodos → `TypeError`. Ahora con guarda.
+  - `seguridad.ValidadorTLS.verificar_tls`: `getpeercert()` puede devolver `None` en conexiones sin certificado verificado → `AttributeError` al hacer `.get()`. Ahora con `or {}`.
+  - `accesibilidad`: atributos HTML multivaluados de BeautifulSoup (lista) rompían `.lower()`/indexado; se normalizan a `str` con un helper `_attr`.
+
+---
+
 ## [1.0.0] — 2026-07-15
 
 ### Añadido

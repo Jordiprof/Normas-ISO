@@ -49,7 +49,8 @@ def _sin_docstrings(codigo: str) -> str:
         if not isinstance(primero.value.value, str):
             continue
         # Blanquear las líneas del docstring preservando longitudes y saltos de línea
-        for i in range(primero.lineno - 1, primero.end_lineno):
+        fin = primero.end_lineno if primero.end_lineno is not None else primero.lineno
+        for i in range(primero.lineno - 1, fin):
             original = lineas[i]
             salto = "\n" if original.endswith("\n") else ""
             lineas[i] = " " * (len(original) - len(salto)) + salto

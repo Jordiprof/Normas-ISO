@@ -1,6 +1,7 @@
 """BaseDatosSegura — acceso a PostgreSQL/MySQL con parametrización obligatoria y datos encriptados (ISO 27001)."""
 
 import logging
+from typing import Any
 
 import mysql.connector
 import psycopg2
@@ -44,7 +45,8 @@ class BaseDatosSegura:
         )
         # Se puede inyectar un ToolkitSeguridad ya configurado (p. ej. con clave explícita).
         self.seguridad = seguridad or ToolkitSeguridad()
-        self.conexion = None
+        # Any: el tipo de conexión difiere entre psycopg2 y mysql.connector (dos drivers).
+        self.conexion: Any = None
         self._conectar(host, usuario, password, nombre_bd)
 
     def _conectar(self, host, usuario, password, nombre_bd):

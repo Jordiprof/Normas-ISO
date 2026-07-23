@@ -13,6 +13,7 @@ Toolkit modular en Python con **controles técnicos automatizables** alineados c
 - [Instalación](#instalación)
 - [Configuración](#configuración)
 - [CLI: `kit-iso auditar`](#cli-kit-iso-auditar)
+- [Contrato público vs interno](#contrato-público-vs-interno)
 - [Módulos y uso](#módulos-y-uso)
 - [API de demostración](#api-de-demostración)
 - [Tests](#tests)
@@ -210,6 +211,15 @@ print(generar_markdown(resultados))
 Ejemplo completo end-to-end en [`ejemplos/auditoria_completa.py`](ejemplos/auditoria_completa.py).
 
 ---
+
+## Contrato público vs interno
+
+La librería sigue **SemVer**: lo que se considera API pública no cambia de forma incompatible sin subir de versión mayor.
+
+- **Público (estable):** las clases validadoras y generadoras exportadas por cada módulo (`kit_iso.seguridad.ToolkitSeguridad`, `kit_iso.accesibilidad.HerramientasAccesibilidad`, `kit_iso.cra.GeneradorSBOM`, etc.), la función `ejecutar_auditoria`, y el comando `kit-iso auditar` con sus flags y códigos de salida.
+- **Interno (sin garantías):** todo lo que empieza por guion bajo (`kit_iso._auditoria`, funciones `_privadas`) y los detalles de implementación de cada módulo. Puede cambiar en cualquier versión.
+
+Los type hints se envían con el paquete (`py.typed`, PEP 561): al instalar `kit-iso`, tu type checker los aprovecha.
 
 ## Módulos y uso
 

@@ -1,7 +1,22 @@
 """HerramientasAccesibilidad — validación WCAG 2.1 (ISO 40500)."""
 
 import re
+
 from bs4 import BeautifulSoup
+from bs4.element import Tag
+
+
+def _attr(tag: Tag, nombre: str, defecto: str = "") -> str:
+    """Devuelve un atributo de un tag de bs4 siempre como ``str``.
+
+    Los atributos HTML multivaluados (p. ej. ``class``) los devuelve bs4 como
+    lista; aquí se unen con espacio. ``None`` → *defecto*.
+    """
+    valor = tag.get(nombre, defecto)
+    if isinstance(valor, list):
+        return " ".join(valor)
+    return valor if valor is not None else defecto
+
 
 # Textos de enlace considerados no descriptivos (WCAG 2.4.4).
 _TEXTOS_NO_DESCRIPTIVOS = {
@@ -104,7 +119,7 @@ class HerramientasAccesibilidad:
         """1.4.3 — Contraste mínimo 4.5:1 para texto normal (solo colores hex inline)."""
         fallos = []
         for tag in soup.find_all(style=True):
-            style = tag.get("style", "")
+            style = _attr(tag, "style")
             color = self._extraer_color_hex(style, "color")
             bg = self._extraer_color_hex(style, "background-color")
             if color and bg:
@@ -123,7 +138,7 @@ class HerramientasAccesibilidad:
         for a in soup.find_all("a", href=True):
             texto = a.get_text(strip=True).lower()
             if texto in _TEXTOS_NO_DESCRIPTIVOS:
-                href = a.get("href", "")[:40]
+                href = _attr(a, "href")[:40]
                 fallos.append(f"Enlace no descriptivo: texto='{texto}', href='{href}'")
         return fallos
 
@@ -139,7 +154,7 @@ class HerramientasAccesibilidad:
         fallos = []
         tipos_ignorados = {"submit", "reset", "button", "hidden", "image"}
         for inp in soup.find_all("input"):
-            tipo = inp.get("type", "text").lower()
+            tipo = _attr(inp, "type", "text").lower()
             if tipo in tipos_ignorados:
                 continue
             inp_id = inp.get("id")
