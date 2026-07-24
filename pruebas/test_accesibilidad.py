@@ -1,6 +1,7 @@
 """Tests de HerramientasAccesibilidad: criterios WCAG 2.1."""
 
 import pytest
+
 from kit_iso.accesibilidad import HerramientasAccesibilidad
 
 

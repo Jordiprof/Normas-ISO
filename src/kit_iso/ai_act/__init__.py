@@ -4,6 +4,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+from typing import ClassVar
 
 # ── Clasificación de riesgo (AI Act art. 6, Anexo III) ────────────────────────
 
@@ -117,7 +118,7 @@ class TransparenciaIA:
     para sistemas ya en mercado el 2 de agosto de 2024).
     """
 
-    _AVISOS = {
+    _AVISOS: ClassVar[dict[str, str]] = {
         "es": (
             "Este servicio utiliza inteligencia artificial. "
             "Estás interactuando con un sistema automatizado, no con una persona."
@@ -243,7 +244,7 @@ class DocumentacionTecnicaAnexoIV:
         })
     """
 
-    SECCIONES = [
+    SECCIONES: ClassVar[list[tuple[str, str]]] = [
         ("1", "Descripción del sistema de IA y su propósito previsto"),
         ("2", "Nombre y datos de contacto del proveedor"),
         ("3", "Versión del software y fecha de la versión"),

@@ -2,8 +2,9 @@
 
 import math
 import re
-import ssl
 import socket
+import ssl
+from typing import ClassVar
 
 
 class ValidadorSeguridad:
@@ -13,7 +14,7 @@ class ValidadorSeguridad:
     detección de cadenas de alta entropía (posibles tokens sin nombre revelador).
     """
 
-    PATRONES_CRITICOS = [
+    PATRONES_CRITICOS: ClassVar[list[tuple[str, str]]] = [
         (r'password\s*=\s*[\'"].+[\'"]', "contraseña hardcodeada"),
         (r'api_key\s*=\s*[\'"].+[\'"]', "api_key hardcodeada"),
         (r'secret\s*=\s*[\'"].+[\'"]', "secret hardcodeado"),
@@ -120,7 +121,7 @@ class ValidadorSecurityHeaders:
             print(resultado["ausentes"], resultado["debiles"])
     """
 
-    HEADERS_REQUERIDOS = {
+    HEADERS_REQUERIDOS: ClassVar[dict[str, str]] = {
         "Strict-Transport-Security": "HSTS: max-age >= 31536000 (1 año)",
         "X-Content-Type-Options": "Debe ser 'nosniff'",
         "X-Frame-Options": "Debe ser 'DENY' o 'SAMEORIGIN'",
@@ -194,23 +195,25 @@ class ValidadorTLS:
         """Verifica el certificado TLS y la versión de protocolo del host."""
         try:
             ctx = ssl.create_default_context()
-            with socket.create_connection((host, puerto), timeout=timeout) as conn:
-                with ctx.wrap_socket(conn, server_hostname=host) as tls:
-                    cert = tls.getpeercert() or {}
-                    # ssl tipa "subject" como tuplas anidadas que los stubs no estrechan.
-                    subject = dict(x[0] for x in cert.get("subject", []))  # type: ignore[misc]
-                    version = tls.version()
-                    resultado = {
-                        "estado": "ok",
-                        "host": host,
-                        "subject": subject,
-                        "expira": cert.get("notAfter", "desconocido"),
-                        "version": version,
-                    }
-                    if version in ("TLSv1", "TLSv1.1"):
-                        resultado["estado"] = "fallo"
-                        resultado["advertencia"] = f"{version} está obsoleto — usa TLS 1.2+"
-                    return resultado
+            with (
+                socket.create_connection((host, puerto), timeout=timeout) as conn,
+                ctx.wrap_socket(conn, server_hostname=host) as tls,
+            ):
+                cert = tls.getpeercert() or {}
+                # ssl tipa "subject" como tuplas anidadas que los stubs no estrechan.
+                subject = dict(x[0] for x in cert.get("subject", []))  # type: ignore[misc]
+                version = tls.version()
+                resultado = {
+                    "estado": "ok",
+                    "host": host,
+                    "subject": subject,
+                    "expira": cert.get("notAfter", "desconocido"),
+                    "version": version,
+                }
+                if version in ("TLSv1", "TLSv1.1"):
+                    resultado["estado"] = "fallo"
+                    resultado["advertencia"] = f"{version} está obsoleto — usa TLS 1.2+"
+                return resultado
         except ssl.SSLCertVerificationError as e:
             return {"estado": "fallo", "host": host, "error": f"Certificado inválido: {e}"}
         except ssl.SSLError as e:

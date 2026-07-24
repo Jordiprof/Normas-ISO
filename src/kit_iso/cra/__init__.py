@@ -3,6 +3,7 @@
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import ClassVar
 
 # ── SBOM (CRA Art. 13.5) ──────────────────────────────────────────────────────
 
@@ -180,7 +181,7 @@ class ChecklistSecureByDesign:
         # → {"estado": "fallo", "puntuacion": 60.0, "pendientes": [...]}
     """
 
-    CONTROLES = [
+    CONTROLES: ClassVar[list[tuple[str, str]]] = [
         ("autenticacion_fuerte", "Autenticación fuerte por defecto (MFA, sin contraseñas débiles)"),
         ("cifrado_datos_reposo", "Datos sensibles cifrados en reposo"),
         ("cifrado_datos_transito", "Comunicaciones cifradas en tránsito (TLS 1.2+)"),

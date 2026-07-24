@@ -1,8 +1,9 @@
 """Tests del módulo de seguridad: gestión de clave, ciclo de encriptación y detector de secretos."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
 from cryptography.fernet import Fernet
-from unittest.mock import MagicMock, patch
 
 from kit_iso.seguridad import VAR_CLAVE, ToolkitSeguridad
 from kit_iso.seguridad.validador import (
@@ -216,10 +217,12 @@ def test_tls_valido_devuelve_ok():
     mock_conn.__enter__ = lambda s: mock_conn
     mock_conn.__exit__ = MagicMock(return_value=False)
 
-    with patch("kit_iso.seguridad.validador.socket.create_connection", return_value=mock_conn):
-        with patch("kit_iso.seguridad.validador.ssl.create_default_context") as mock_ctx:
-            mock_ctx.return_value.wrap_socket.return_value = mock_tls
-            resultado = ValidadorTLS().verificar_tls("example.com")
+    with (
+        patch("kit_iso.seguridad.validador.socket.create_connection", return_value=mock_conn),
+        patch("kit_iso.seguridad.validador.ssl.create_default_context") as mock_ctx,
+    ):
+        mock_ctx.return_value.wrap_socket.return_value = mock_tls
+        resultado = ValidadorTLS().verificar_tls("example.com")
 
     assert resultado["estado"] == "ok"
     assert resultado["version"] == "TLSv1.3"
@@ -228,14 +231,16 @@ def test_tls_valido_devuelve_ok():
 def test_tls_certificado_invalido():
     import ssl
 
-    with patch("kit_iso.seguridad.validador.socket.create_connection") as mock_conn:
-        with patch("kit_iso.seguridad.validador.ssl.create_default_context") as mock_ctx:
-            mock_ctx.return_value.wrap_socket.side_effect = ssl.SSLCertVerificationError(
-                "certificate verify failed"
-            )
-            mock_conn.return_value.__enter__ = lambda s: mock_conn.return_value
-            mock_conn.return_value.__exit__ = MagicMock(return_value=False)
-            resultado = ValidadorTLS().verificar_tls("badssl.example.com")
+    with (
+        patch("kit_iso.seguridad.validador.socket.create_connection") as mock_conn,
+        patch("kit_iso.seguridad.validador.ssl.create_default_context") as mock_ctx,
+    ):
+        mock_ctx.return_value.wrap_socket.side_effect = ssl.SSLCertVerificationError(
+            "certificate verify failed"
+        )
+        mock_conn.return_value.__enter__ = lambda s: mock_conn.return_value
+        mock_conn.return_value.__exit__ = MagicMock(return_value=False)
+        resultado = ValidadorTLS().verificar_tls("badssl.example.com")
 
     assert resultado["estado"] == "fallo"
     assert "Certificado inválido" in resultado["error"]

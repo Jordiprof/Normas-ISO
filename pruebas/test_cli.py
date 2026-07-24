@@ -250,6 +250,7 @@ def _run(*args, **kwargs):
         text=True,
         encoding="utf-8",
         env=env,
+        check=False,  # los tests inspeccionan returncode/stdout de la CLI, no queremos que lance
         **kwargs,
     )
 
@@ -298,7 +299,9 @@ def test_cli_exit_code_ok_con_security_md(tmp_path):
 
 
 def test_cli_umbral_complejidad_flag(directorio_limpio):
-    result = _run("auditar", str(directorio_limpio), "--umbral-complejidad", "3", "--formato", "json")
+    result = _run(
+        "auditar", str(directorio_limpio), "--umbral-complejidad", "3", "--formato", "json"
+    )
     data = json.loads(result.stdout)
     ctrl = next(c for c in data["controles"] if "complejidad" in c["control"].lower())
     assert "3" in ctrl["control"]

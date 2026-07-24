@@ -119,8 +119,8 @@ class AnalizadorISO5055:
                 capture_output=True,
                 text=True,
                 timeout=120,
+                check=False,  # bandit devuelve exit 1 si encuentra issues (normal) — parseamos igualmente.
             )
-            # bandit devuelve exit 1 si encuentra issues (normal) — parseamos igualmente.
             datos = json.loads(proc.stdout or '{"results": []}')
         except subprocess.TimeoutExpired:
             return {"estado": "error", "error": "timeout al ejecutar bandit", "hallazgos_cwe": []}

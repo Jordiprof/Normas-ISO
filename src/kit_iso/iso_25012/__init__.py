@@ -127,15 +127,18 @@ class ValidadorCalidadDatos:
                             "error": f"valor {valor} > máximo {reglas['max']}",
                         }
                     )
-                if "patron" in reglas and isinstance(valor, str):
-                    if not re.match(reglas["patron"], valor):
-                        errores.append(
-                            {
-                                "indice": i,
-                                "campo": campo,
-                                "error": f"valor '{valor}' no coincide con el patrón",
-                            }
-                        )
+                if (
+                    "patron" in reglas
+                    and isinstance(valor, str)
+                    and not re.match(reglas["patron"], valor)
+                ):
+                    errores.append(
+                        {
+                            "indice": i,
+                            "campo": campo,
+                            "error": f"valor '{valor}' no coincide con el patrón",
+                        }
+                    )
 
         total = len(registros)
         indices_error = {e["indice"] for e in errores}
@@ -188,10 +191,11 @@ class ValidadorCalidadDatos:
         violaciones = []
         for i, registro in enumerate(registros):
             for regla in reglas:
+                # La regla es un lambda del usuario: cualquier fallo se reporta, no crashea.
                 try:
                     if not regla["fn"](registro):
                         violaciones.append({"indice": i, "regla": regla["descripcion"]})
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     violaciones.append(
                         {
                             "indice": i,

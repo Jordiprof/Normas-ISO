@@ -3,8 +3,7 @@
 import json
 from unittest.mock import MagicMock, patch
 
-
-from kit_iso.iso_5055 import AnalizadorISO5055, _BANDIT_A_CWE, CATEGORIAS_ISO5055
+from kit_iso.iso_5055 import _BANDIT_A_CWE, CATEGORIAS_ISO5055, AnalizadorISO5055
 
 # ── Mapeo bandit → CWE ───────────────────────────────────────────────────────
 

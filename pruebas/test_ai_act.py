@@ -1,6 +1,5 @@
 """Tests del módulo ai_act: clasificador, transparencia, registro de decisiones, gobernanza."""
 
-
 from kit_iso.ai_act import (
     ClasificadorRiesgoIA,
     DocumentacionTecnicaAnexoIV,

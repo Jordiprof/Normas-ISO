@@ -71,7 +71,8 @@ def _control_secretos(directorio: Path, excluir: list[str] | None = None) -> dic
             try:
                 for item in val.analizar_codigo(py.read_text(encoding="utf-8", errors="ignore")):
                     hallazgos.append(f"{py.relative_to(directorio)}: {item[:120]}")
-            except Exception:  # nosec B110 — archivo inaccesible, se omite deliberadamente
+            # Archivo o módulo inaccesible durante el escaneo: se omite deliberadamente.
+            except Exception:  # nosec B110  # noqa: BLE001, S110
                 pass
         return {
             "norma": "ISO 27001 A.8.12",
@@ -79,7 +80,7 @@ def _control_secretos(directorio: Path, excluir: list[str] | None = None) -> dic
             "estado": "fallo" if hallazgos else "ok",
             "hallazgos": hallazgos,
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {
             "norma": "ISO 27001 A.8.12",
             "control": "Secretos hardcodeados en código fuente",
@@ -107,7 +108,7 @@ def _control_cwe(directorio: Path) -> dict:
             "resumen_por_cwe": resultado.get("resumen_por_cwe", {}),
             "resumen_por_categoria": resultado.get("resumen_por_categoria", {}),
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {
             "norma": "ISO/IEC 5055",
             "control": "Calidad de código — debilidades CWE (bandit)",
@@ -130,7 +131,8 @@ def _control_complejidad(directorio: Path, umbral: int, excluir: list[str] | Non
                 r = hc.medir_complejidad(py.read_text(encoding="utf-8", errors="ignore"))
                 for item in r.get("sobre_umbral", []):
                     sobre_umbral.append(f"{py.relative_to(directorio)}: {item}")
-            except Exception:  # nosec B110 — archivo o módulo inaccesible, se omite
+            # Archivo o módulo inaccesible durante el escaneo: se omite deliberadamente.
+            except Exception:  # nosec B110  # noqa: BLE001, S110
                 pass
         return {
             "norma": "ISO 25010 — Mantenibilidad",
@@ -138,7 +140,7 @@ def _control_complejidad(directorio: Path, umbral: int, excluir: list[str] | Non
             "estado": "fallo" if sobre_umbral else "ok",
             "hallazgos": sobre_umbral,
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {
             "norma": "ISO 25010 — Mantenibilidad",
             "control": label,
@@ -169,7 +171,8 @@ def _control_pii(directorio: Path, excluir: list[str] | None = None) -> dict:
                         hallazgos.append(
                             f"{py.relative_to(directorio)}: {h['tipo']} (pos. {h['posicion']})"
                         )
-            except Exception:  # nosec B110 — archivo inaccesible, se omite
+            # Archivo o módulo inaccesible durante el escaneo: se omite deliberadamente.
+            except Exception:  # nosec B110  # noqa: BLE001, S110
                 pass
         return {
             "norma": "ISO 27701 + GDPR Art. 5",
@@ -177,7 +180,7 @@ def _control_pii(directorio: Path, excluir: list[str] | None = None) -> dict:
             "estado": "fallo" if hallazgos else "ok",
             "hallazgos": hallazgos,
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {
             "norma": "ISO 27701 + GDPR Art. 5",
             "control": "PII en código fuente",
@@ -240,7 +243,8 @@ def _control_wcag(directorio: Path, excluir: list[str] | None = None) -> dict:
                     hallazgos.append(
                         f"{html_file.relative_to(directorio)}: [{h['criterio']}] {h['mensaje'][:80]}"
                     )
-            except Exception:  # nosec B110 — archivo inaccesible, se omite
+            # Archivo o módulo inaccesible durante el escaneo: se omite deliberadamente.
+            except Exception:  # nosec B110  # noqa: BLE001, S110
                 pass
         return {
             "norma": "WCAG 2.1 / ISO 40500",
@@ -248,7 +252,7 @@ def _control_wcag(directorio: Path, excluir: list[str] | None = None) -> dict:
             "estado": "fallo" if hallazgos else "ok",
             "hallazgos": hallazgos,
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {
             "norma": "WCAG 2.1 / ISO 40500",
             "control": "Accesibilidad HTML",
@@ -334,10 +338,13 @@ def generar_markdown(resultados: dict) -> str:
         lineas.append(f"| {c['norma']} | {c['control']} | {icono} {c['estado']} |")
 
     r = resultados["resumen"]
+    resumen_linea = (
+        f"> **{r['pasados']}/{r['total_controles']} controles pasados** — "
+        f"Fallidos: {r['fallidos']} · Advertencias: {r['advertencias']}"
+    )
     lineas += [
         "",
-        f"> **{r['pasados']}/{r['total_controles']} controles pasados** — "
-        f"Fallidos: {r['fallidos']} · Advertencias: {r['advertencias']}",
+        resumen_linea,
         "",
         "---",
         "",

@@ -126,9 +126,11 @@ def test_cobertura_ok_cuando_sobre_umbral(hc):
     mock_cov = MagicMock()
     mock_cov.report.return_value = 90.0
 
-    with patch("kit_iso.calidad.coverage_lib.Coverage", return_value=mock_cov):
-        with patch("kit_iso.calidad.pytest.main", return_value=0):
-            resultado = hc.medir_cobertura("src/kit_iso", "pruebas/")
+    with (
+        patch("kit_iso.calidad.coverage_lib.Coverage", return_value=mock_cov),
+        patch("kit_iso.calidad.pytest.main", return_value=0),
+    ):
+        resultado = hc.medir_cobertura("src/kit_iso", "pruebas/")
 
     assert resultado["estado"] == "ok"
     assert resultado["cobertura"] == 90.0
@@ -139,9 +141,11 @@ def test_cobertura_falla_cuando_bajo_umbral(hc):
     mock_cov = MagicMock()
     mock_cov.report.return_value = 60.0
 
-    with patch("kit_iso.calidad.coverage_lib.Coverage", return_value=mock_cov):
-        with patch("kit_iso.calidad.pytest.main", return_value=0):
-            resultado = hc.medir_cobertura("src/kit_iso", "pruebas/")
+    with (
+        patch("kit_iso.calidad.coverage_lib.Coverage", return_value=mock_cov),
+        patch("kit_iso.calidad.pytest.main", return_value=0),
+    ):
+        resultado = hc.medir_cobertura("src/kit_iso", "pruebas/")
 
     assert resultado["estado"] == "fallo"
     assert resultado["cobertura"] == 60.0
@@ -151,9 +155,11 @@ def test_cobertura_falla_cuando_tests_fallan(hc):
     mock_cov = MagicMock()
     mock_cov.report.return_value = 85.0
 
-    with patch("kit_iso.calidad.coverage_lib.Coverage", return_value=mock_cov):
-        with patch("kit_iso.calidad.pytest.main", return_value=1):
-            resultado = hc.medir_cobertura("src/kit_iso", "pruebas/")
+    with (
+        patch("kit_iso.calidad.coverage_lib.Coverage", return_value=mock_cov),
+        patch("kit_iso.calidad.pytest.main", return_value=1),
+    ):
+        resultado = hc.medir_cobertura("src/kit_iso", "pruebas/")
 
     assert resultado["tests_exitosos"] is False
 

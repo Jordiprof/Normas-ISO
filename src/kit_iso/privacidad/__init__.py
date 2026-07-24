@@ -2,6 +2,7 @@
 
 import logging
 import re
+from typing import ClassVar
 
 # ── Patrones PII (ISO 27701 + GDPR Art. 4) ───────────────────────────────────
 
@@ -124,7 +125,7 @@ class ChecklistCloudPrivacidad:
         r27018 = cl.evaluar_27018({"pii_no_en_logs": True, "retencion_datos_definida": False})
     """
 
-    _CONTROLES_27017 = [
+    _CONTROLES_27017: ClassVar[list[tuple[str, str]]] = [
         (
             "separacion_responsabilidades",
             "Responsabilidades cloud (proveedor vs. cliente) documentadas",
@@ -136,7 +137,7 @@ class ChecklistCloudPrivacidad:
         ("logs_auditoria_cloud", "Logs de auditoría cloud habilitados y exportados"),
     ]
 
-    _CONTROLES_27018 = [
+    _CONTROLES_27018: ClassVar[list[tuple[str, str]]] = [
         ("pii_no_en_logs", "PII ausente en logs (filtro activo o política revisada)"),
         ("pii_no_en_backups_sin_cifrar", "PII en backups solo en forma cifrada"),
         ("retencion_datos_definida", "Política de retención de PII definida y automatizada"),

@@ -5,6 +5,22 @@ Versionado: [Semantic Versioning 2.0.0](https://semver.org/lang/es/)
 
 ---
 
+## [1.0.2] — 2026-07-16
+
+Arregla el CI, que empezó a fallar al pushear todo el trabajo de las Fases 2-4 por primera vez (el workflow existía desde la Fase 1, pero nunca había corrido contra este código en un entorno limpio). Sin cambios de comportamiento.
+
+### Corregido
+
+- **`ruff check` (37 issues) y `black --check` (2 archivos)**: deuda de estilo acumulada durante las Fases 2-4, nunca verificada porque ruff/black no estaban instalados en local hasta ahora. Desglose:
+  - 7 atributos de clase mutables (`RUF012`) anotados como `ClassVar` (tablas de lookup de solo lectura: patrones, controles, secciones — nunca se mutan).
+  - 6 `with` anidados combinados en una sola sentencia (`SIM117`).
+  - 2 `subprocess.run` con `check=False` explícito (ya se gestionaba el returncode manualmente).
+  - Los `except Exception` deliberados (saltar un archivo ilegible durante un escaneo, o convertir cualquier fallo de un control en estado `"error"` en vez de crashear la CLI) llevan ahora `# noqa: BLE001, S110` junto al `# nosec B110` de bandit — antes solo bandit los reconocía; ruff no entiende la sintaxis de bandit y los seguía marcando.
+  - 1 `if` anidado colapsado (`SIM102`), 1 concatenación implícita de f-strings parentizada (`ISC004`).
+- Verificado: bandit sigue suprimiendo las mismas 9 excepciones (sin regresión de cobertura de seguridad), mypy sigue limpio, 177 tests pasan, auto-auditoría 6/6.
+
+---
+
 ## [1.0.1] — 2026-07-16
 
 Pulido de empaquetado y documentación para publicación (sin cambios de comportamiento ni de API).

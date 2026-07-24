@@ -3,7 +3,6 @@
 import json
 import tempfile
 
-
 from kit_iso.cra import (
     ChecklistSecureByDesign,
     GeneradorPoliticaVulnerabilidades,

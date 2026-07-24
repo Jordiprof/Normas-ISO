@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kit-iso"
-version = "1.0.1"
+version = "1.0.2"
 description = "Controles técnicos automatizables para cumplimiento normativo (ISO 27001, 25010, 9241, 40500, AI Act, CRA)"
 readme = "README.md"
 requires-python = ">=3.10"
