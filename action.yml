@@ -20,6 +20,9 @@ inputs:
   argumentos:
     description: Flags extra para `kit-iso auditar` (p. ej. `--excluir "ejemplos/*"`).
     default: ""
+  token:
+    description: Token con lectura del repositorio kit-iso (necesario si es privado). Por defecto, el del job.
+    default: ${{ github.token }}
 
 runs:
   using: composite
@@ -33,7 +36,7 @@ runs:
       run: |
         REF="${{ inputs.version }}"
         if [ -z "$REF" ]; then REF="${{ github.action_ref }}"; fi
-        pip install --quiet "kit-iso[auditoria] @ git+https://github.com/Jordiprof/Normas-ISO.git@${REF}"
+        pip install --quiet "kit-iso[auditoria] @ git+https://x-access-token:${{ inputs.token }}@github.com/Jordiprof/Normas-ISO.git@${REF}"
 
     - name: Auditar
       shell: bash

@@ -35,7 +35,11 @@ Se instala en **cualquier proyecto** con una línea, decide **qué normas aplica
 pip install "kit-iso[auditoria] @ git+https://github.com/Jordiprof/Normas-ISO.git@v1.1.0"
 ```
 
-Fija siempre un tag (`@v1.1.0`): así cada proyecto actualiza cuando decide. Extras disponibles:
+Fija siempre un tag (`@v1.1.0`): así cada proyecto actualiza cuando decide.
+
+> El repositorio es **privado**: `pip` clona con tus credenciales de git. Basta con tener sesión en GitHub CLI (`gh auth login` y `gh auth setup-git`) o un token con permiso `repo` en el gestor de credenciales.
+
+Extras disponibles:
 
 | Extra | Instala | Cuándo |
 |---|---|---|
@@ -188,7 +192,7 @@ Los controles de módulos no activos aparecen como **omitidos**: quedan en el in
     argumentos: ""         # flags extra para `kit-iso auditar`
 ```
 
-La action instala el kit (misma versión que el tag), ejecuta `kit-iso auditar`, vuelca el informe en el resumen del job y lo sube como artefacto. Falla el job si hay controles fallidos.
+La action instala el kit (misma versión que el tag), ejecuta `kit-iso auditar`, vuelca el informe en el resumen del job y lo sube como artefacto. Falla el job si hay controles fallidos. Usa `github.token` para clonar el kit (repositorio privado); para que otros repositorios del mismo propietario puedan invocarla, en *Settings → Actions → General* de `Normas-ISO` debe estar activado el acceso desde repositorios del propietario.
 
 ---
 
