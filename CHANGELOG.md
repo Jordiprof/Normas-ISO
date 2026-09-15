@@ -24,7 +24,7 @@ El kit pasa de repositorio aislado a **herramienta instalable en cualquier proye
 
 ### Cambiado
 
-- **Licencia: de MIT a propietaria** (todos los derechos reservados). `pyproject.toml` declara `LicenseRef-Proprietary` y el clasificador `License :: Other/Proprietary License`.
+- **Licencia: de MIT a propietaria** (todos los derechos reservados). `pyproject.toml` declara `license = "LicenseRef-Proprietary"` (PEP 639).
 - **`pytest` ya no es requisito de importación de `calidad`** (solo lo usan `medir_cobertura` y `run_tests`): el control de complejidad funciona en proyectos sin pytest.
 - **Los drivers de base de datos ya no son dependencia obligatoria**: `base_datos` los importa de forma tolerante y `BaseDatosSegura` falla con instrucción de instalación (`pip install "kit-iso[bd]"`) si faltan. Instalar el kit en un proyecto ya no arrastra `psycopg2` ni `mysql-connector`.
 - **bandit se invoca con el intérprete actual** (`python -m bandit`), respeta `excluir` (`-x`) y tolera la barra de progreso que escribe en stdout con muchos archivos. El control CWE propaga el mensaje de error real en vez de un estado `error` mudo.

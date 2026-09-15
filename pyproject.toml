@@ -34,7 +34,6 @@ classifiers = [
     "Topic :: Security",
     "Topic :: Software Development :: Quality Assurance",
     "Typing :: Typed",
-    "License :: Other/Proprietary License",
 ]
 dependencies = [
     "cryptography>=41.0.0",
