@@ -22,7 +22,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Instalar dependencias
-        run: pip install -e ".[dev,auditoria]"
+        # setuptools/pip del runner pueden traer CVEs conocidos: se actualizan antes de auditar.
+        run: |
+          pip install --upgrade pip setuptools
+          pip install -e ".[dev,auditoria]"
 
       - name: Linter (ruff)
         run: ruff check src/ pruebas/
