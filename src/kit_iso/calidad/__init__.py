@@ -2,7 +2,12 @@
 
 import time
 
-import pytest
+# pytest solo hace falta para medir_cobertura/run_tests: no puede ser requisito de importación
+# (un proyecto que instala el kit para `kit-iso auditar` no tiene por qué tener pytest).
+try:
+    import pytest
+except ImportError:  # pragma: no cover — depende del entorno
+    pytest = None  # type: ignore[assignment]
 
 try:
     from radon.complexity import cc_rank, cc_visit
@@ -122,6 +127,8 @@ class HerramientasCalidad:
         """
         if not _coverage_disponible:
             raise ImportError("coverage no está instalado — instálalo con: pip install coverage")
+        if pytest is None:
+            raise ImportError("pytest no está instalado — instálalo con: pip install pytest")
 
         cov = coverage_lib.Coverage(source=[directorio_fuente])
         cov.start()
@@ -144,4 +151,6 @@ class HerramientasCalidad:
 
     def run_tests(self):
         """Ejecuta pytest sobre el directorio de pruebas estándar."""
+        if pytest is None:
+            raise ImportError("pytest no está instalado — instálalo con: pip install pytest")
         pytest.main(["pruebas/"])

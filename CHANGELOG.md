@@ -24,6 +24,7 @@ El kit pasa de repositorio aislado a **herramienta instalable en cualquier proye
 
 ### Cambiado
 
+- **`pytest` ya no es requisito de importación de `calidad`** (solo lo usan `medir_cobertura` y `run_tests`): el control de complejidad funciona en proyectos sin pytest.
 - **Los drivers de base de datos ya no son dependencia obligatoria**: `base_datos` los importa de forma tolerante y `BaseDatosSegura` falla con instrucción de instalación (`pip install "kit-iso[bd]"`) si faltan. Instalar el kit en un proyecto ya no arrastra `psycopg2` ni `mysql-connector`.
 - **bandit se invoca con el intérprete actual** (`python -m bandit`), respeta `excluir` (`-x`) y tolera la barra de progreso que escribe en stdout con muchos archivos. El control CWE propaga el mensaje de error real en vez de un estado `error` mudo.
 - **README** reescrito: instalación en otro proyecto, uso con agentes, triaje, CLI, CI, tabla de normas con resumen de una línea, estructura del repo y hoja de ruta.
