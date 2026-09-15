@@ -3,7 +3,7 @@
 [![CI](https://github.com/Jordiprof/Normas-ISO/actions/workflows/ci.yml/badge.svg)](https://github.com/Jordiprof/Normas-ISO/actions/workflows/ci.yml)
 [![Versión](https://img.shields.io/badge/versi%C3%B3n-1.1.0-blue)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
-[![Licencia](https://img.shields.io/badge/licencia-MIT-green)](LICENSE)
+[![Licencia](https://img.shields.io/badge/licencia-propietaria-red)](LICENSE)
 
 Librería Python + CLI con **controles técnicos verificables** alineados con las normas que afectan al software: seguridad (ISO 27001), privacidad (ISO 27701 / RGPD), calidad (ISO 25010 / 5055 / 25012), usabilidad y accesibilidad (ISO 9241 / WCAG 2.1), inteligencia artificial (AI Act / ISO 42001) y ciberresiliencia (CRA).
 
@@ -306,4 +306,4 @@ Siguiente fase (pendiente, sin fecha):
 
 ---
 
-Licencia [MIT](LICENSE). Vulnerabilidades: ver [SECURITY.md](SECURITY.md).
+**Licencia propietaria** — todos los derechos reservados; ver [LICENSE](LICENSE). Uso, copia, modificación o distribución solo con autorización escrita del autor. Vulnerabilidades: ver [SECURITY.md](SECURITY.md).

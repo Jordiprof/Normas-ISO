@@ -1,21 +1,31 @@
-MIT License
+LICENCIA PROPIETARIA — kit-iso
 
-Copyright (c) 2026 Jordi
+Copyright (c) 2026 Jordi (Jordiprof). Todos los derechos reservados.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Este software, su código fuente, documentación y materiales asociados (el
+"Software") son propiedad exclusiva del autor y están protegidos por la
+legislación de propiedad intelectual.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Sin autorización previa, expresa y por escrito del autor, queda PROHIBIDO:
+   a) usar, ejecutar o integrar el Software en cualquier proyecto o sistema;
+   b) copiar, reproducir o redistribuir el Software, total o parcialmente,
+      por cualquier medio;
+   c) modificar, adaptar, traducir o crear obras derivadas del Software;
+   d) sublicenciar, vender, alquilar, prestar o ceder el Software a terceros;
+   e) eliminar u ocultar este aviso de copyright o cualquier otro aviso de
+      propiedad.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. El acceso al repositorio (por ejemplo, como colaborador o mediante un
+   fork) no concede ninguna licencia ni derecho de uso.
+
+3. Cualquier permiso concedido por el autor será limitado a lo que indique
+   expresamente el documento que lo otorgue y podrá ser revocado.
+
+4. EL SOFTWARE SE PROPORCIONA "TAL CUAL", SIN GARANTÍA DE NINGÚN TIPO,
+   EXPRESA O IMPLÍCITA. EN NINGÚN CASO EL AUTOR SERÁ RESPONSABLE DE DAÑOS
+   DERIVADOS DEL USO O DE LA IMPOSIBILIDAD DE USO DEL SOFTWARE.
+
+5. Este documento se rige por la legislación española. El uso no autorizado
+   podrá dar lugar a acciones civiles y penales.
+
+Para solicitar una autorización de uso: jimprogdam@gmail.com
