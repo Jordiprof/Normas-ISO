@@ -157,7 +157,8 @@ def test_directorio_resuelto_a_absoluta(directorio_limpio):
 def test_resumen_suma_correcta(directorio_limpio):
     r = ejecutar_auditoria(directorio_limpio)
     res = r["resumen"]
-    assert res["pasados"] + res["fallidos"] + res["advertencias"] == res["total_controles"]
+    suma = res["pasados"] + res["fallidos"] + res["advertencias"] + res["omitidos"]
+    assert suma == res["total_controles"]
 
 
 def test_hay_seis_controles(directorio_limpio):
@@ -173,12 +174,62 @@ def test_cada_control_tiene_keys_minimas(directorio_limpio):
         assert "estado" in c
         assert "hallazgos" in c
         assert c["estado"] in ("ok", "fallo", "error", "advertencia")
+        assert "modulo" in c
 
 
 def test_umbral_complejidad_personalizable(directorio_limpio):
     r = ejecutar_auditoria(directorio_limpio, umbral_complejidad=5)
     ctrl = next(c for c in r["controles"] if "complejidad" in c["control"].lower())
     assert "5" in ctrl["control"]
+
+
+def test_modulos_filtran_controles(directorio_limpio):
+    r = ejecutar_auditoria(directorio_limpio, modulos={"seguridad", "calidad"})
+    omitidos = [c for c in r["controles"] if c["estado"] == "omitido"]
+    assert r["resumen"]["total_controles"] == 6
+    assert r["resumen"]["omitidos"] == 4
+    assert len(omitidos) == 4
+    assert all("no activo" in c["nota"] for c in omitidos)
+    ejecutados = {c["modulo"] for c in r["controles"] if c["estado"] != "omitido"}
+    assert ejecutados == {"seguridad", "calidad"}
+    assert r["modulos"] == ["calidad", "seguridad"]
+
+
+def test_control_omitido_no_cuenta_como_fallo(tmp_path):
+    """Sin SECURITY.md el control CRA fallaría; omitido, no."""
+    (tmp_path / "ok.py").write_text("x = 1\n", encoding="utf-8")
+    r = ejecutar_auditoria(tmp_path, modulos={"seguridad"})
+    assert r["resumen"]["fallidos"] == 0
+
+
+def test_markdown_muestra_omitidos():
+    resultado = {
+        "version_kit": "1.1.0",
+        "timestamp": "2026-01-01T00:00:00+00:00",
+        "directorio": "/x",
+        "resumen": {
+            "total_controles": 2,
+            "pasados": 1,
+            "fallidos": 0,
+            "advertencias": 0,
+            "omitidos": 1,
+        },
+        "controles": [
+            {"norma": "A", "control": "a", "estado": "ok", "hallazgos": []},
+            {
+                "norma": "B",
+                "control": "b",
+                "estado": "omitido",
+                "hallazgos": [],
+                "nota": "No aplica",
+            },
+        ],
+    }
+    md = generar_markdown(resultado)
+    assert "⏭️" in md
+    assert "1/1 controles pasados" in md
+    assert "Omitidos (no aplican): 1" in md
+    assert "No aplica" in md
 
 
 def test_directorio_vacio_ok(tmp_path):
@@ -320,3 +371,132 @@ def test_cli_excluir_flag(tmp_path):
     data = json.loads(result.stdout)
     secretos = next(c for c in data["controles"] if "Secreto" in c["control"])
     assert secretos["estado"] == "ok"
+
+
+# ── init / skill / auditar con kit-iso.toml ───────────────────────────────────
+
+
+def test_cli_init_perfil_genera_todo(tmp_path):
+    result = _run("init", str(tmp_path), "--perfil", "web", "--si", "--ci")
+    assert result.returncode == 0, result.stderr
+    toml = (tmp_path / "kit-iso.toml").read_text(encoding="utf-8")
+    assert 'perfil = "web"' in toml
+    assert '"accesibilidad"' in toml
+    assert (tmp_path / "AGENTS.md").exists()
+    assert (tmp_path / "CLAUDE.md").read_text(encoding="utf-8").strip() == "@AGENTS.md"
+    for carpeta in (".claude", ".cursor", ".agents"):
+        assert (tmp_path / carpeta / "skills" / "kit-iso" / "SKILL.md").exists()
+    assert (tmp_path / ".github" / "workflows" / "kit-iso.yml").exists()
+
+
+def test_cli_init_detectar_si_no_pregunta(tmp_path):
+    (tmp_path / "requirements.txt").write_text("openai\n", encoding="utf-8")
+    result = _run("init", str(tmp_path), "--detectar", "--si", "--sin-skill", "--sin-agents-md")
+    assert result.returncode == 0, result.stderr
+    toml = (tmp_path / "kit-iso.toml").read_text(encoding="utf-8")
+    assert '"ai_act"' in toml
+    assert "dependencias de IA: openai" in toml
+    assert not (tmp_path / "AGENTS.md").exists()
+    assert not (tmp_path / ".claude").exists()
+
+
+def test_cli_init_solo_mostrar_no_escribe(tmp_path):
+    result = _run("init", str(tmp_path), "--perfil", "minimo", "--solo-mostrar")
+    assert result.returncode == 0
+    assert "[kit-iso]" in result.stdout
+    assert not (tmp_path / "kit-iso.toml").exists()
+
+
+def test_cli_init_idempotente_conserva_toml(tmp_path):
+    _run("init", str(tmp_path), "--perfil", "minimo", "--si")
+    (tmp_path / "kit-iso.toml").write_text(
+        '[kit-iso]\nmodulos = ["seguridad"]\nperfil = "mio"\n', encoding="utf-8"
+    )
+    result = _run("init", str(tmp_path), "--perfil", "web", "--si")
+    assert result.returncode == 0
+    assert "se conserva" in result.stdout
+    assert 'perfil = "mio"' in (tmp_path / "kit-iso.toml").read_text(encoding="utf-8")
+    assert (tmp_path / "AGENTS.md").read_text(encoding="utf-8").count("kit-iso:inicio") == 1
+
+
+def test_cli_init_forzar_regenera(tmp_path):
+    _run("init", str(tmp_path), "--perfil", "minimo", "--si")
+    result = _run("init", str(tmp_path), "--perfil", "web", "--si", "--forzar")
+    assert result.returncode == 0
+    assert 'perfil = "web"' in (tmp_path / "kit-iso.toml").read_text(encoding="utf-8")
+
+
+def test_cli_init_agentes_concretos(tmp_path):
+    result = _run("init", str(tmp_path), "--perfil", "minimo", "--si", "--agentes", "cursor")
+    assert result.returncode == 0
+    assert (tmp_path / ".cursor/skills/kit-iso/SKILL.md").exists()
+    assert not (tmp_path / ".claude").exists()
+
+
+def test_cli_init_agente_desconocido_falla(tmp_path):
+    result = _run("init", str(tmp_path), "--perfil", "minimo", "--si", "--agentes", "copilot")
+    assert result.returncode != 0
+
+
+def test_cli_init_sector_publico_avisa_pendiente(tmp_path):
+    result = _run("init", str(tmp_path), "--perfil", "sector-publico", "--si", "--sin-skill")
+    assert result.returncode == 0
+    assert "ens" in result.stdout
+    assert 'pendientes = ["ens"]' in (tmp_path / "kit-iso.toml").read_text(encoding="utf-8")
+
+
+def test_cli_skill_proyecto(tmp_path):
+    result = _run("skill", str(tmp_path), "--agentes", "claude,codex")
+    assert result.returncode == 0
+    assert (tmp_path / ".claude/skills/kit-iso/SKILL.md").exists()
+    assert (tmp_path / ".agents/skills/kit-iso/SKILL.md").exists()
+
+
+def test_cli_auditar_lee_toml_y_omite(tmp_path):
+    (tmp_path / "ok.py").write_text("x = 1\n", encoding="utf-8")
+    (tmp_path / "kit-iso.toml").write_text(
+        '[kit-iso]\nmodulos = ["seguridad", "calidad"]\nexcluir = ["demo/*"]\n', encoding="utf-8"
+    )
+    result = _run("auditar", str(tmp_path), "--formato", "json")
+    data = json.loads(result.stdout)
+    assert data["modulos"] == ["calidad", "seguridad"]
+    assert data["resumen"]["omitidos"] == 4
+    assert data["config"].endswith("kit-iso.toml")
+    # sin SECURITY.md el control CRA fallaría, pero está omitido → exit 0
+    assert result.returncode == 0
+
+
+def test_cli_auditar_toml_en_padre(tmp_path):
+    (tmp_path / "kit-iso.toml").write_text('[kit-iso]\nmodulos = ["seguridad"]\n', encoding="utf-8")
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "a.py").write_text("x = 1\n", encoding="utf-8")
+    result = _run("auditar", str(src), "--formato", "json")
+    data = json.loads(result.stdout)
+    assert data["resumen"]["omitidos"] == 5
+
+
+def test_cli_auditar_flags_prevalecen_sobre_toml(tmp_path):
+    (tmp_path / "a.py").write_text("x = 1\n", encoding="utf-8")
+    (tmp_path / "kit-iso.toml").write_text(
+        '[kit-iso]\nmodulos = ["calidad"]\numbral_complejidad = 7\n', encoding="utf-8"
+    )
+    result = _run("auditar", str(tmp_path), "--formato", "json", "--umbral-complejidad", "3")
+    data = json.loads(result.stdout)
+    ctrl = next(c for c in data["controles"] if "complejidad" in c["control"].lower())
+    assert "3" in ctrl["control"]
+
+
+def test_cli_auditar_config_explicita(tmp_path):
+    cfg = tmp_path / "otra.toml"
+    cfg.write_text('[kit-iso]\nmodulos = ["seguridad"]\n', encoding="utf-8")
+    (tmp_path / "a.py").write_text("x = 1\n", encoding="utf-8")
+    result = _run("auditar", str(tmp_path), "--config", str(cfg), "--formato", "json")
+    assert json.loads(result.stdout)["resumen"]["omitidos"] == 5
+
+
+def test_cli_auditar_toml_invalido_exit_2(tmp_path):
+    (tmp_path / "kit-iso.toml").write_text('[kit-iso]\nmodulos = ["magia"]\n', encoding="utf-8")
+    result = _run("auditar", str(tmp_path))
+    assert result.returncode == 2
+    assert "magia" in result.stderr

@@ -2,6 +2,8 @@
 
 import json
 import subprocess  # nosec B404 — uso controlado: solo ejecuta bandit con argumentos fijos
+import sys
+from pathlib import Path
 
 # Mapeo bandit test_id → CWE-ID (selección de las debilidades más comunes).
 # Referencia: https://cwe.mitre.org/ + https://bandit.readthedocs.io/
@@ -83,6 +85,39 @@ CATEGORIAS_ISO5055 = {
 }
 
 
+def _ejecutar_bandit(directorio: str, excluir: list[str] | None) -> tuple[dict | None, str | None]:
+    """Lanza bandit en JSON. Devuelve (datos, None) o (None, mensaje de error)."""
+    # Con el intérprete actual: funciona aunque el venv no esté en el PATH.
+    comando = [sys.executable, "-m", "bandit", "-r", directorio, "-f", "json"]
+    if excluir:
+        comando += ["-x", ",".join(str(Path(directorio) / g) for g in excluir)]
+    try:
+        proc = subprocess.run(  # nosec B603 B607 — comando fijo sin shell; `directorio` es un argumento posicional, no código
+            comando,
+            capture_output=True,
+            text=True,
+            timeout=300,
+            check=False,  # bandit devuelve exit 1 si encuentra issues (normal) — parseamos igualmente.
+        )
+    except subprocess.TimeoutExpired:
+        return None, "timeout al ejecutar bandit"
+    except FileNotFoundError:
+        return None, 'bandit no encontrado — instala con: pip install "kit-iso[auditoria]"'
+    # Con muchos archivos bandit escribe una barra de progreso en stdout antes del JSON.
+    inicio = proc.stdout.find("{")
+    if inicio < 0:
+        # `python -m bandit` sin bandit instalado: exit 1 y stderr, sin JSON.
+        detalle = (proc.stderr or "").strip().splitlines()[-1:] or ["sin salida"]
+        return (
+            None,
+            f'bandit no disponible ({detalle[0]}) — instala: pip install "kit-iso[auditoria]"',
+        )
+    try:
+        return json.loads(proc.stdout[inicio:]), None
+    except json.JSONDecodeError as e:
+        return None, f"salida JSON inválida: {e}"
+
+
 class AnalizadorISO5055:
     """Analiza código fuente y mapea hallazgos de bandit a CWE (ISO/IEC 5055).
 
@@ -100,8 +135,12 @@ class AnalizadorISO5055:
             print(h["cwe"], h["descripcion"])
     """
 
-    def analizar_directorio(self, directorio: str) -> dict:
+    def analizar_directorio(self, directorio: str, excluir: list[str] | None = None) -> dict:
         """Ejecuta bandit y mapea cada hallazgo a su CWE correspondiente.
+
+        Args:
+            directorio: raíz a analizar.
+            excluir: globs relativos a *directorio* que bandit debe saltar (``ejemplos/*``).
 
         Returns::
 
@@ -113,25 +152,10 @@ class AnalizadorISO5055:
                 "resumen_por_categoria": {"seguridad": 5, "fiabilidad": 1}
             }
         """
-        try:
-            proc = subprocess.run(  # nosec B603 B607 — comando fijo sin shell; `directorio` es un argumento posicional, no código
-                ["bandit", "-r", directorio, "-f", "json"],
-                capture_output=True,
-                text=True,
-                timeout=120,
-                check=False,  # bandit devuelve exit 1 si encuentra issues (normal) — parseamos igualmente.
-            )
-            datos = json.loads(proc.stdout or '{"results": []}')
-        except subprocess.TimeoutExpired:
-            return {"estado": "error", "error": "timeout al ejecutar bandit", "hallazgos_cwe": []}
-        except json.JSONDecodeError as e:
-            return {"estado": "error", "error": f"salida JSON inválida: {e}", "hallazgos_cwe": []}
-        except FileNotFoundError:
-            return {
-                "estado": "error",
-                "error": "bandit no encontrado — instala con: pip install bandit",
-                "hallazgos_cwe": [],
-            }
+        datos, error = _ejecutar_bandit(directorio, excluir)
+        if error:
+            return {"estado": "error", "error": error, "hallazgos_cwe": []}
+        assert datos is not None  # nosec B101 — invariante de _ejecutar_bandit
 
         hallazgos_cwe = []
         for r in datos.get("results", []):

@@ -9,19 +9,20 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.12']
     steps:
       - name: Clonar repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar Python
+      - name: Configurar Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
 
       - name: Instalar dependencias
-        run: |
-          pip install -r requirements.txt
-          pip install -e .
+        run: pip install -e ".[dev,auditoria]"
 
       - name: Linter (ruff)
         run: ruff check src/ pruebas/
@@ -32,8 +33,25 @@ jobs:
       - name: Análisis de seguridad (bandit)
         run: bandit -r src/ -ll
 
+      - name: Vulnerabilidades en dependencias (pip-audit)
+        run: pip-audit --skip-editable
+
       - name: Tipos (mypy)
         run: mypy
 
       - name: Tests
         run: pytest pruebas/ -v
+
+      - name: Autoauditoría (el kit se audita a sí mismo)
+        run: kit-iso auditar .
+
+  action:
+    # La composite action que usan los proyectos destino debe funcionar contra este mismo repo.
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          directorio: .
+          version: ${{ github.sha }}

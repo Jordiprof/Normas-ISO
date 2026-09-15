@@ -1,0 +1,17 @@
+# Auditoría de cumplimiento normativo con kit-iso.
+# Generado por `kit-iso init --ci`. Falla el job si algún control activo en kit-iso.toml no pasa.
+name: kit-iso
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  auditoria:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Jordiprof/Normas-ISO@__VERSION__
+        with:
+          directorio: .

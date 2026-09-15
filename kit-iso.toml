@@ -1,0 +1,19 @@
+# Configuración de kit-iso — el kit se audita a sí mismo con su propio mecanismo.
+# Lista los módulos del kit que aplican a ESTE proyecto y por qué. Se commitea.
+
+[kit-iso]
+version = "1.1.0"
+perfil = "personalizado"
+modulos = ["seguridad", "calidad", "iso_5055", "cra"]
+pendientes = []
+umbral_complejidad = 10
+excluir = ["ejemplos/*", "pruebas/*", "venv/*", "build/*"]
+
+[kit-iso.triaje]
+web = { valor = false, justificacion = "librería + CLI; el HTML solo aparece en tests de accesibilidad" }
+base_datos = { valor = false, justificacion = "ofrece BaseDatosSegura a otros, pero el kit no usa ninguna BD" }
+datos_personales = { valor = false, justificacion = "no trata datos personales; los emails de pruebas/ son ejemplos" }
+ia = { valor = false, justificacion = "ofrece controles del AI Act, pero no ejecuta modelos de IA" }
+producto = { valor = true, justificacion = "paquete Python distribuible (pyproject.toml) → CRA aplica" }
+datasets = { valor = false, justificacion = "sin datasets ni analítica" }
+sector_publico = { valor = false, justificacion = "confirmado: no es para el sector público" }

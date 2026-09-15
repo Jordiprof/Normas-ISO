@@ -1,375 +1,305 @@
-# Kit Cumplimiento ISO
+# kit-iso — Cumplimiento normativo como código
 
-Toolkit modular en Python con **controles técnicos automatizables** alineados con normas ISO para aplicaciones full-stack: seguridad (ISO 27001), calidad (ISO 25010), usabilidad (ISO 9241) y accesibilidad (ISO 40500 / WCAG 2.1). Soporta PostgreSQL y MySQL.
+[![CI](https://github.com/Jordiprof/Normas-ISO/actions/workflows/ci.yml/badge.svg)](https://github.com/Jordiprof/Normas-ISO/actions/workflows/ci.yml)
+[![Versión](https://img.shields.io/badge/versi%C3%B3n-1.1.0-blue)](CHANGELOG.md)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
+[![Licencia](https://img.shields.io/badge/licencia-MIT-green)](LICENSE)
 
-> **Qué es y qué no es.** Este kit ayuda a *implementar controles técnicos* alineados con normas ISO. **No certifica** el cumplimiento de ninguna norma: ISO 27001 y similares certifican sistemas de gestión (procesos, políticas, auditorías), no código. Úsalo como una capa de buenas prácticas verificables, no como un sello.
+Librería Python + CLI con **controles técnicos verificables** alineados con las normas que afectan al software: seguridad (ISO 27001), privacidad (ISO 27701 / RGPD), calidad (ISO 25010 / 5055 / 25012), usabilidad y accesibilidad (ISO 9241 / WCAG 2.1), inteligencia artificial (AI Act / ISO 42001) y ciberresiliencia (CRA).
+
+Se instala en **cualquier proyecto** con una línea, decide **qué normas aplican a ese proyecto** mediante un triaje con evidencia, y deja instrucciones para que **cualquier agente de IA** (Claude Code, Codex, Cursor, OpenCode, Antigravity) las aplique.
+
+> **Qué es y qué no es.** El kit ayuda a *implementar y demostrar* controles técnicos. **No certifica** ninguna norma: ISO 27001, 42001 y el ENS certifican sistemas de gestión (procesos, políticas, auditorías), no código. Úsalo como una capa de buenas prácticas verificables y como evidencia para una auditoría, no como un sello.
 
 ---
 
 ## Índice
 
-- [Características](#características)
-- [Estructura del proyecto](#estructura-del-proyecto)
-- [Instalación](#instalación)
-- [Configuración](#configuración)
-- [CLI: `kit-iso auditar`](#cli-kit-iso-auditar)
-- [Contrato público vs interno](#contrato-público-vs-interno)
-- [Módulos y uso](#módulos-y-uso)
-- [API de demostración](#api-de-demostración)
-- [Tests](#tests)
-- [Dependencias](#dependencias)
+- [Instalación en tu proyecto](#instalación-en-tu-proyecto)
+- [Uso con agentes de IA](#uso-con-agentes-de-ia)
+- [Triaje y `kit-iso.toml`](#triaje-y-kit-isotoml)
+- [CLI](#cli)
+- [Integración continua](#integración-continua)
+- [Módulos y normas](#módulos-y-normas)
+- [Uso como librería](#uso-como-librería)
+- [Desarrollo del kit](#desarrollo-del-kit)
 - [Hoja de ruta](#hoja-de-ruta)
 
 ---
 
-## Características
+## Instalación en tu proyecto
 
-| Norma | Módulo | Clase principal |
-|-------|--------|----------------|
-| ISO 27001 — Seguridad | `kit_iso.seguridad` | `ToolkitSeguridad` (Fernet), `ValidadorSeguridad` (8 patrones + entropía), `ValidadorContrasenasSeguras` (argon2/bcrypt), `ValidadorSecurityHeaders`, `ValidadorTLS` |
-| ISO 9241 — Usabilidad | `kit_iso.usabilidad` | `HerramientasUsabilidad` |
-| ISO 27001 + BD | `kit_iso.base_datos` | `BaseDatosSegura` |
-| ISO 40500 / WCAG 2.1 — Accesibilidad | `kit_iso.accesibilidad` | `HerramientasAccesibilidad` (6 criterios: 1.1.1, 1.3.1, 1.4.3, 2.4.4, 3.1.1, 3.3.2) |
-| ISO 25010 — Calidad | `kit_iso.calidad` | `HerramientasCalidad` (rendimiento + complejidad McCabe con radon + cobertura con coverage) |
-| AI Act + ISO 42001/23894 — IA | `kit_iso.ai_act` | `ClasificadorRiesgoIA`, `TransparenciaIA` (art. 50), `RegistroDecisionesIA` (art. 12), `DocumentacionTecnicaAnexoIV`, `RegistroModelosIA`, `RegistroRiesgosIA` |
-| CRA + ISO 29147/30111 — Ciberresiliencia | `kit_iso.cra` | `GeneradorSBOM` (CycloneDX), `GeneradorPoliticaVulnerabilidades` (security.txt/SECURITY.md), `ChecklistSecureByDesign`, `PlantillaReporteVulnerabilidad` (24h/72h/14d) |
-| ISO 27701 + 27017/27018 — Privacidad | `kit_iso.privacidad` | `DetectorPII` (7 tipos), `EnmascaradorLogs`, `ChecklistCloudPrivacidad` |
-| ISO/IEC 5055 — Calidad de código | `kit_iso.iso_5055` | `AnalizadorISO5055` (bandit → CWE) |
-| ISO/IEC 25012 — Calidad de datos | `kit_iso.iso_25012` | `ValidadorCalidadDatos` (completitud, exactitud, consistencia) |
-| **CLI unificada** | `kit_iso.cli` | `kit-iso auditar <dir>` — 6 controles, informe Markdown/JSON |
-
----
-
-## Estructura del proyecto
-
-```
-kit-cumplimiento-iso/
-├── src/
-│   └── kit_iso/
-│       ├── __init__.py              # Punto de entrada del paquete (v1.0.0)
-│       ├── cli.py                   # CLI: kit-iso auditar <dir>
-│       ├── _auditoria.py            # Lógica de auditoría consolidada (6 controles)
-│       ├── seguridad/
-│       │   ├── __init__.py          # ToolkitSeguridad — Fernet con clave persistente (env)
-│       │   └── validador.py         # ValidadorSeguridad — detección de secretos expuestos
-│       ├── usabilidad/
-│       │   └── __init__.py          # HerramientasUsabilidad — validación de inputs + métricas
-│       ├── base_datos/
-│       │   └── __init__.py          # BaseDatosSegura — PostgreSQL/MySQL, commit/rollback, whitelist
-│       ├── accesibilidad/
-│       │   └── __init__.py          # HerramientasAccesibilidad — validación WCAG 2.1
-│       ├── calidad/
-│       │   └── __init__.py          # HerramientasCalidad — performance + complejidad + cobertura
-│       ├── ai_act/
-│       │   └── __init__.py          # AI Act + ISO 42001/23894 — transparencia y gobernanza IA
-│       ├── cra/
-│       │   └── __init__.py          # CRA + ISO 29147/30111 — SBOM y divulgación de vulnerabilidades
-│       ├── privacidad/
-│       │   └── __init__.py          # ISO 27701 + 27017/27018 — PII, enmascarado, cloud
-│       ├── iso_5055/
-│       │   └── __init__.py          # ISO/IEC 5055 — bandit → CWE
-│       ├── iso_25012/
-│       │   └── __init__.py          # ISO/IEC 25012 — calidad de datos
-│       ├── ia/
-│       │   └── __init__.py          # Re-exporta ai_act (compatibilidad)
-│       └── nucleo/
-│           └── __init__.py          # Logger + config desde variables de entorno
-├── ejemplos/
-│   └── ejemplos_codigo.py           # API FastAPI de demostración
-├── pruebas/
-│   ├── test_seguridad.py            # Clave persistente, ciclo encriptar/desencriptar, detector
-│   ├── test_base_datos.py           # Commit/rollback, whitelist, context manager (BD mockeada)
-│   └── test_usabilidad.py           # Validación de inputs y feedback
-├── requirements.txt
-├── pyproject.toml
-├── PLAN-MEJORA.md                   # Plan por fases hacia v1.0 (AI Act, CRA, más ISOs)
-└── README.md
-```
-
----
-
-## Instalación
-
-**Requisitos:** Python 3.10+
+**Requisitos:** Python 3.10 o superior.
 
 ```bash
-git clone <url-del-repo>
-cd kit-cumplimiento-iso
+pip install "kit-iso[auditoria] @ git+https://github.com/Jordiprof/Normas-ISO.git@v1.1.0"
+```
 
-python -m venv venv
-# Windows
-.\venv\Scripts\Activate.ps1
-# Linux / macOS
-source venv/bin/activate
+Fija siempre un tag (`@v1.1.0`): así cada proyecto actualiza cuando decide. Extras disponibles:
 
-pip install -r requirements.txt
-pip install -e .
+| Extra | Instala | Cuándo |
+|---|---|---|
+| `auditoria` | `bandit`, `radon` | Para `kit-iso auditar` (controles CWE y complejidad). Recomendado. |
+| `bd` | `psycopg2-binary`, `mysql-connector-python` | Solo si usas `BaseDatosSegura`. |
+
+Después, en la raíz del proyecto:
+
+```bash
+kit-iso init --detectar
+```
+
+`init` hace el triaje (siete preguntas de sí/no, pre-rellenadas con evidencia del propio repositorio), y genera:
+
+| Archivo | Para qué |
+|---|---|
+| `kit-iso.toml` | Qué módulos aplican a este proyecto y **por qué**. Se commitea. |
+| `AGENTS.md` (bloque delimitado) | Instrucciones que leen Codex, Cursor, OpenCode y Antigravity. Respeta lo que ya hubiera. |
+| `CLAUDE.md` (línea `@AGENTS.md`) | Claude Code importa el mismo archivo. |
+| `.claude/skills/kit-iso/`, `.cursor/skills/kit-iso/`, `.agents/skills/kit-iso/` | La skill `kit-iso` en formato [Agent Skills](https://agentskills.io); tres carpetas cubren los cinco agentes. |
+| `.github/workflows/kit-iso.yml` (con `--ci`) | Auditoría en cada push y PR. |
+
+Todo es idempotente: repetir `kit-iso init` conserva el triaje y refresca la skill. Para elegir agentes: `--agentes claude,cursor`. Para no tocar nada: `--solo-mostrar`.
+
+Verifica:
+
+```bash
+kit-iso auditar .
 ```
 
 ---
 
-## Configuración
+## Uso con agentes de IA
 
-Toda la configuración sensible va por variables de entorno (archivo `.env`, nunca commiteado). Copia `.env.example` a `.env`:
+Una vez hecho `kit-iso init`, en cualquier conversación con tu agente dentro del proyecto basta con:
 
-```env
-# Clave de encriptación Fernet — OBLIGATORIA para usar seguridad/base_datos
-KIT_ISO_CLAVE=<clave generada>
+> «Aplica el kit-iso según `kit-iso.toml`.»
 
-DB_TIPO=postgres        # "postgres" o "mysql"
-DB_HOST=localhost
-DB_USUARIO=tu_usuario
-DB_PASSWORD=tu_password
-DB_NOMBRE=nombre_bd
+El agente encuentra la skill, lee `kit-iso.toml`, aplica solo los módulos activos, corrige con el formato *veredicto / hallazgo / remediación* y verifica con `kit-iso auditar`. Si el proyecto aún no tiene `kit-iso.toml`, la skill le obliga a proponer el triaje con evidencia y **pedirte confirmación** antes de escribirlo; nunca aplica el kit entero «por si acaso».
+
+| Agente | Lee las instrucciones de | Skill en |
+|---|---|---|
+| Claude Code | `CLAUDE.md` → `@AGENTS.md` | `.claude/skills/` |
+| Cursor | `AGENTS.md` | `.cursor/skills/` |
+| Codex CLI | `AGENTS.md` | `.agents/skills/` |
+| OpenCode | `AGENTS.md` | `.agents/skills/` (también lee `.claude/skills/`) |
+| Antigravity | `AGENTS.md` | `.agents/skills/` |
+
+Para tener la skill disponible en **todos** tus proyectos sin instalarla en cada uno:
+
+```bash
+kit-iso skill --global --agentes claude,codex
 ```
 
-Genera la clave una sola vez:
+---
+
+## Triaje y `kit-iso.toml`
+
+No todos los proyectos necesitan todas las normas. Auditar accesibilidad en una CLI sin HTML, o el CRA en un script interno, produce fallos que no significan nada y acaban ignorándose. El triaje lo evita:
+
+| Pregunta | Si es «sí», activa | `--detectar` lo propone a partir de |
+|---|---|---|
+| (siempre) | `seguridad`, `calidad`, `iso_5055` | — |
+| ¿Interfaz web / HTML? | `accesibilidad`, `usabilidad` | `.html`, `templates/`, flask/django/fastapi/react/vue… |
+| ¿Base de datos? | `base_datos` | psycopg/sqlalchemy/mysql/sqlite/prisma…, `.sql` |
+| ¿Datos personales? | `privacidad` | campos `email`, `dni`, `telefono`, `iban`… en código o esquemas |
+| ¿IA / LLM? | `ai_act` | openai/anthropic/langchain/transformers/ollama… |
+| ¿Producto distribuido con software? | `cra` | `pyproject.toml`/`setup.py`, `package.json` con `bin`, `Dockerfile` |
+| ¿Datasets / analítica? | `iso_25012` | pandas/polars/duckdb…, `.csv`/`.parquet` |
+| ¿Sector público español? | `ens` (pendiente en el kit) | no detectable: se pregunta siempre |
+
+La heurística **propone**; la persona (o el agente, pidiendo confirmación) **decide**, y la decisión queda escrita:
+
+```toml
+[kit-iso]
+version = "1.1.0"
+perfil = "personalizado"
+modulos = ["seguridad", "calidad", "iso_5055", "accesibilidad", "usabilidad", "privacidad"]
+pendientes = []
+umbral_complejidad = 10
+excluir = ["ejemplos/*"]
+
+[kit-iso.triaje]
+web = { valor = true, justificacion = "3 archivo(s) .html; carpeta templates/; dependencias: flask" }
+datos_personales = { valor = true, justificacion = "campos de datos personales en: modelos.py" }
+ia = { valor = false, justificacion = "sin librerías de IA/LLM en las dependencias" }
+# ...
+```
+
+Perfiles predefinidos para arrancar sin preguntas: `--perfil minimo | web | api-datos-personales | agente-llm | producto-cra | sector-publico`.
+
+---
+
+## CLI
+
+```bash
+kit-iso init [dir] [--detectar] [--perfil P] [--si] [--agentes a,b] [--ci] [--forzar] [--solo-mostrar]
+kit-iso auditar <dir> [--formato markdown|json] [--salida ARCHIVO] [--config kit-iso.toml]
+                      [--umbral-complejidad N] [--excluir GLOB]...
+kit-iso skill [dir] [--agentes a,b] [--global]
+```
+
+`auditar` busca `kit-iso.toml` en el directorio y sus padres; los flags explícitos tienen prioridad sobre el archivo. Sin `kit-iso.toml`, ejecuta todos los controles.
+
+### Controles automatizados
+
+| Módulo | Norma | Control | Detecta |
+|---|---|---|---|
+| `seguridad` | ISO 27001 A.8.12 | Secretos hardcodeados | Contraseñas, API keys, tokens, claves PEM (8 patrones + entropía Shannon) |
+| `iso_5055` | ISO/IEC 5055 | Debilidades CWE | Hallazgos de bandit mapeados a CWE, respetando `excluir` |
+| `calidad` | ISO 25010 | Complejidad ciclomática | Funciones por encima del umbral McCabe |
+| `privacidad` | ISO 27701 + RGPD art. 5 | PII en código | Emails, teléfonos, DNI/NIE, IBAN, IPs privadas (ignora docstrings) |
+| `cra` | CRA art. 14 + ISO 29147 | Artefactos de divulgación | `SECURITY.md`, `.well-known/security.txt`, fuente de SBOM |
+| `accesibilidad` | WCAG 2.1 / ISO 40500 | Accesibilidad HTML | 6 criterios sobre los `.html` del proyecto |
+
+Los controles de módulos no activos aparecen como **omitidos**: quedan en el informe (constancia de que no aplican) pero no cuentan como fallo.
+
+### Informe (el kit auditándose a sí mismo)
+
+```markdown
+# Informe de Auditoría — kit-iso v1.1.0
+
+| Norma | Control | Estado |
+|-------|---------|--------|
+| ISO 27001 A.8.12 | Secretos hardcodeados en código fuente | ✅ ok |
+| ISO/IEC 5055 | Calidad de código — debilidades CWE (bandit) | ✅ ok |
+| ISO 25010 — Mantenibilidad | Complejidad ciclomática (umbral McCabe: 10) | ✅ ok |
+| ISO 27701 + GDPR Art. 5 | PII en código fuente | ⏭️ omitido |
+| CRA Art. 14 + ISO 29147 | Artefactos de divulgación de vulnerabilidades | ✅ ok |
+| WCAG 2.1 / ISO 40500 | Accesibilidad HTML | ⏭️ omitido |
+
+> **4/4 controles pasados** — Fallidos: 0 · Advertencias: 0 · Omitidos (no aplican): 2
+```
+
+### Códigos de salida
+
+- `0` todos los controles activos pasan · `1` hay fallos · `2` error de uso (directorio o `kit-iso.toml` inválidos).
+
+---
+
+## Integración continua
+
+`kit-iso init --ci` deja un workflow que usa la action de este repositorio:
+
+```yaml
+- uses: actions/checkout@v4
+- uses: Jordiprof/Normas-ISO@v1.1.0
+  with:
+    directorio: .          # opcional
+    argumentos: ""         # flags extra para `kit-iso auditar`
+```
+
+La action instala el kit (misma versión que el tag), ejecuta `kit-iso auditar`, vuelca el informe en el resumen del job y lo sube como artefacto. Falla el job si hay controles fallidos.
+
+---
+
+## Módulos y normas
+
+| Módulo | Norma | Clases principales | Resumen de la norma |
+|---|---|---|---|
+| `seguridad` | ISO 27001 | `ToolkitSeguridad` (Fernet, clave en `KIT_ISO_CLAVE`), `ValidadorSeguridad`, `ValidadorContrasenasSeguras` (argon2/bcrypt), `ValidadorSecurityHeaders`, `ValidadorTLS` | Seguridad de la información: accesos, cifrado, secretos, registro. Certificable. |
+| `base_datos` | ISO 27001 | `BaseDatosSegura` (SQL parametrizado, whitelist de identificadores, commit/rollback) | Idem, aplicado al acceso a datos. Extra `[bd]`. |
+| `privacidad` | ISO 27701 + RGPD + 27017/27018 | `DetectorPII` (7 tipos), `EnmascaradorLogs`, `ChecklistCloudPrivacidad` | Datos personales: minimización, derechos, encargados y nube. |
+| `calidad` | ISO 25010 | `HerramientasCalidad` (McCabe con radon, cobertura, rendimiento) | Modelo de calidad del software: mantenibilidad, eficiencia, fiabilidad. |
+| `iso_5055` | ISO/IEC 5055 | `AnalizadorISO5055` (bandit → CWE) | Calidad del código medida por debilidades concretas (CWE). |
+| `iso_25012` | ISO/IEC 25012 | `ValidadorCalidadDatos` (completitud, exactitud, consistencia) | Calidad de los datos. |
+| `usabilidad` | ISO 9241 | `HerramientasUsabilidad` | Interfaces eficaces, eficientes y satisfactorias. |
+| `accesibilidad` | ISO 40500 / WCAG 2.1 | `HerramientasAccesibilidad` (criterios 1.1.1, 1.3.1, 1.4.3, 2.4.4, 3.1.1, 3.3.2) | Accesibilidad web para personas con discapacidad. |
+| `ai_act` | AI Act + ISO 42001 / 23894 | `ClasificadorRiesgoIA`, `TransparenciaIA` (art. 50), `RegistroDecisionesIA` (art. 12), `DocumentacionTecnicaAnexoIV`, `RegistroModelosIA`, `RegistroRiesgosIA` | Ley europea de IA por niveles de riesgo; el art. 50 (avisar de que se habla con una IA) aplica desde el 2/8/2026. ISO 42001: gestión de IA responsable. |
+| `cra` | CRA + ISO 29147 / 30111 | `GeneradorSBOM` (CycloneDX), `GeneradorPoliticaVulnerabilidades`, `ChecklistSecureByDesign`, `PlantillaReporteVulnerabilidad` | Productos con software: seguro por diseño, SBOM, divulgación y gestión de vulnerabilidades. |
+| `ens` | ENS (RD 311/2022) | pendiente | Obligatorio para el sector público español y sus proveedores. |
+
+`kit_iso.ia` se mantiene solo por compatibilidad: usa `kit_iso.ai_act`.
+
+---
+
+## Uso como librería
+
+```python
+from kit_iso.seguridad import ToolkitSeguridad
+from kit_iso.seguridad.validador import ValidadorSeguridad
+from kit_iso.privacidad import DetectorPII
+from kit_iso.ai_act import TransparenciaIA
+
+seg = ToolkitSeguridad()                       # clave desde KIT_ISO_CLAVE; falla explícito si no existe
+cifrado = seg.encriptar_datos("dato sensible")
+
+ValidadorSeguridad().analizar_codigo("api_key = '12345'")
+# → ["RIESGO ISO 27001: api_key hardcodeada (patrón: ...)"]
+
+DetectorPII().analizar("Contacta con juan@empresa.com")
+# → {"contiene_pii": True, "hallazgos": [{"tipo": "email", ...}]}
+```
+
+Auditoría programática (mismo resultado que la CLI):
+
+```python
+from kit_iso._auditoria import ejecutar_auditoria, generar_markdown
+from kit_iso.perfiles import cargar
+
+cfg = cargar("kit-iso.toml")
+resultados = ejecutar_auditoria(".", modulos=cfg.modulos, excluir=cfg.excluir)
+print(generar_markdown(resultados))
+```
+
+**Configuración sensible por variables de entorno** (`.env`, nunca commiteado; plantilla en [`.env.example`](.env.example)). Genera la clave Fernet una sola vez:
 
 ```bash
 python -c "from kit_iso.seguridad import ToolkitSeguridad; print(ToolkitSeguridad.generar_clave().decode())"
 ```
 
-> **Gestión de claves (ISO 27001):** la clave es persistente y vive fuera del código. Si la pierdes, los datos encriptados con ella son **irrecuperables**. Si se expone (commit, log, chat), considérala comprometida: rótala y re-encripta.
+Si la clave se pierde, los datos cifrados son irrecuperables; si se expone, rótala y recifra.
+
+**Contrato público (SemVer):** las clases exportadas por cada módulo, `ejecutar_auditoria`, el formato de `kit-iso.toml`, los marcadores de `AGENTS.md` y los comandos de la CLI con sus flags y códigos de salida. Todo lo que empieza por `_` es interno. Los type hints se distribuyen (`py.typed`).
 
 ---
 
-## CLI: `kit-iso auditar`
-
-Tras `pip install -e .`, el comando `kit-iso` queda disponible. Ejecuta **6 controles automatizados** sobre un directorio y emite un informe consolidado que mapea *norma → control → evidencia → veredicto*.
+## Desarrollo del kit
 
 ```bash
-# Auditar el código fuente y mostrar el informe Markdown por pantalla
-kit-iso auditar src/
-
-# Auditar el directorio actual
-kit-iso auditar .
-
-# Guardar el informe en un archivo
-kit-iso auditar src/ --salida informe-auditoria.md
-
-# Salida JSON (para integrar en pipelines o dashboards)
-kit-iso auditar src/ --formato json --salida auditoria.json
-
-# Ajustar el umbral de complejidad ciclomática (default: 10)
-kit-iso auditar src/ --umbral-complejidad 8
-
-# Excluir rutas del escaneo (glob relativo, repetible)
-kit-iso auditar . --excluir "ejemplos/*" --excluir "*_demo.py"
-```
-
-Equivalente sin el entry point instalado: `python -m kit_iso.cli auditar src/`.
-
-### Controles que ejecuta
-
-| Norma | Control | Detecta |
-|-------|---------|---------|
-| ISO 27001 A.8.12 | Secretos hardcodeados | Contraseñas, API keys, tokens (8 patrones + entropía Shannon) |
-| ISO/IEC 5055 | Debilidades CWE | Hallazgos de bandit mapeados a CWE por categoría |
-| ISO 25010 | Complejidad ciclomática | Funciones por encima del umbral McCabe |
-| ISO 27701 + GDPR | PII en código | Emails, teléfonos, DNI/NIE, IBAN, IPs privadas |
-| CRA Art. 14 + ISO 29147 | Artefactos de divulgación | Presencia de `SECURITY.md` y `.well-known/security.txt` |
-| WCAG 2.1 / ISO 40500 | Accesibilidad HTML | Fallos de accesibilidad en archivos `.html` (si los hay) |
-
-### Ejemplo de salida (Markdown)
-
-```markdown
-# Informe de Auditoría — kit-iso v1.0.0
-
-## Resumen ejecutivo
-
-| Norma | Control | Estado |
-|-------|---------|--------|
-| ISO 27001 A.8.12 | Secretos hardcodeados en código fuente | ✅ ok |
-| ISO/IEC 5055 | Calidad de código — debilidades CWE (bandit) | ❌ fallo |
-| ISO 25010 — Mantenibilidad | Complejidad ciclomática (umbral McCabe: 10) | ✅ ok |
-| ...
-
-> **5/6 controles pasados** — Fallidos: 1 · Advertencias: 0
-```
-
-### Códigos de salida (integración CI/CD)
-
-- `0` — todos los controles pasan.
-- `1` — hay al menos un control fallido (falla el paso del pipeline).
-- `2` — error de uso (p. ej. directorio inexistente).
-
-```yaml
-# Ejemplo en GitHub Actions: bloquea el merge si la auditoría falla
-- run: kit-iso auditar src/
-```
-
-También es invocable como librería:
-
-```python
-from kit_iso._auditoria import ejecutar_auditoria, generar_markdown
-
-resultados = ejecutar_auditoria("src/", umbral_complejidad=10)
-print(generar_markdown(resultados))
-# resultados["resumen"] → {"total_controles": 6, "pasados": 5, "fallidos": 1, ...}
-```
-
-Ejemplo completo end-to-end en [`ejemplos/auditoria_completa.py`](ejemplos/auditoria_completa.py).
-
----
-
-## Contrato público vs interno
-
-La librería sigue **SemVer**: lo que se considera API pública no cambia de forma incompatible sin subir de versión mayor.
-
-- **Público (estable):** las clases validadoras y generadoras exportadas por cada módulo (`kit_iso.seguridad.ToolkitSeguridad`, `kit_iso.accesibilidad.HerramientasAccesibilidad`, `kit_iso.cra.GeneradorSBOM`, etc.), la función `ejecutar_auditoria`, y el comando `kit-iso auditar` con sus flags y códigos de salida.
-- **Interno (sin garantías):** todo lo que empieza por guion bajo (`kit_iso._auditoria`, funciones `_privadas`) y los detalles de implementación de cada módulo. Puede cambiar en cualquier versión.
-
-Los type hints se envían con el paquete (`py.typed`, PEP 561): al instalar `kit-iso`, tu type checker los aprovecha.
-
-## Módulos y uso
-
-### Seguridad — ISO 27001
-
-```python
-from kit_iso.seguridad import ToolkitSeguridad
-from kit_iso.seguridad.validador import ValidadorSeguridad
-
-# Encriptación simétrica Fernet — la clave sale de KIT_ISO_CLAVE (o del argumento clave=)
-seg = ToolkitSeguridad()
-encriptado = seg.encriptar_datos("dato sensible")
-original   = seg.desencriptar_datos(encriptado)
-
-# Detección de secretos expuestos en código fuente
-val = ValidadorSeguridad()
-hallazgos = val.analizar_codigo("api_key = '12345'")
-# → ["RIESGO ISO 27001: Se detectó un secreto expuesto (patrón: api_key...)"]
-```
-
-Sin `KIT_ISO_CLAVE` configurada, `ToolkitSeguridad()` **falla de forma explícita** con instrucciones — nunca genera una clave implícita que haría los datos irrecuperables.
-
----
-
-### Base de Datos Segura — ISO 27001 A.10.1
-
-```python
-from kit_iso.base_datos import BaseDatosSegura
-
-with BaseDatosSegura(
-    tipo_bd="postgres", host="localhost",
-    usuario="user", password="pass", nombre_bd="mi_bd",
-) as db:
-    # Lecturas: consulta parametrizada (previene SQL Injection)
-    filas = db.consulta_segura("SELECT * FROM usuarios WHERE id = %s", (1,))
-
-    # Escrituras: parametrizadas y con commit automático (rollback si falla)
-    db.ejecutar_segura("UPDATE registros SET contenido = %s WHERE id = %s", ("x", 1))
-
-    # Almacenar encriptado con whitelist de tablas/columnas
-    db.almacenar_encriptado("registros", "contenido", "dato sensible")
-```
-
-Whitelist por defecto — tablas: `usuarios`, `registros`, `auditorias`, `documentos`; columnas: `datos`, `contenido`, `valor`, `texto`. Configurable: `BaseDatosSegura(..., tablas_permitidas={"eventos"}, columnas_permitidas={"payload"})`.
-
----
-
-### Usabilidad — ISO 9241
-
-```python
-from kit_iso.usabilidad import HerramientasUsabilidad
-
-hu = HerramientasUsabilidad()
-input_ok = hu.validar_input_usuario("Hola mundo")   # longitud + patrón + escaneo de secretos
-resultado, duracion = hu.medir_eficiencia_interaccion(mi_funcion, arg1)
-mensaje = hu.generar_feedback(exito=True)
-```
-
----
-
-### Accesibilidad — ISO 40500 / WCAG 2.1
-
-```python
-from kit_iso.accesibilidad import HerramientasAccesibilidad
-
-ha = HerramientasAccesibilidad()
-informe = ha.validar_html_accesible('<img src="foto.jpg">')
-# → {"estado": "fallo", "criterio": "1.1.1", "hallazgos": ["Img sin atributo alt: 'foto.jpg'"]}
-```
-
----
-
-### Calidad — ISO 25010
-
-```python
-from kit_iso.calidad import HerramientasCalidad
-
-hc = HerramientasCalidad()
-resultado, duracion = hc.medir_performance(mi_funcion, arg1)
-hc.run_tests()
-```
-
----
-
-## API de demostración
-
-```bash
-uvicorn ejemplos.ejemplos_codigo:app --reload
-```
-
-Endpoints en `http://127.0.0.1:8000/docs`: `/demo/almacenar`, `/demo/accesibilidad`, `/demo/encriptar`. Requiere `.env` con `KIT_ISO_CLAVE` y credenciales de BD.
-
----
-
-## Tests
-
-```bash
+git clone https://github.com/Jordiprof/Normas-ISO.git
+cd Normas-ISO
+python -m venv venv && source venv/bin/activate   # Windows: .\venv\Scripts\Activate.ps1
+pip install -e ".[dev,auditoria]"
 pytest pruebas/ -v
+kit-iso auditar .        # el kit se audita con su propio kit-iso.toml
 ```
 
-La suite (181 tests) incluye **tests de regresión de los bugs corregidos en v0.2.0**, los controles de las Fases 2–3 y la CLI de la Fase 4. Los tests que dependen de `argon2-cffi`, `bcrypt` o `radon` (dependencias opcionales) se saltan automáticamente si no están instaladas:
+```
+Normas-ISO/
+├── src/kit_iso/
+│   ├── cli.py                 # init · auditar · skill
+│   ├── _auditoria.py          # controles y consolidación del informe
+│   ├── perfiles.py            # triaje, perfiles y kit-iso.toml
+│   ├── instalador.py          # skill, AGENTS.md, CLAUDE.md, workflow
+│   ├── recursos/              # SKILL.md, bloque AGENTS.md y plantilla de CI (package-data)
+│   └── <un módulo por norma>/ # seguridad, privacidad, calidad, ai_act, cra, ...
+├── pruebas/                   # tests (pytest)
+├── ejemplos/                  # API FastAPI de demostración y auditoría programática
+├── documentacion/adr/         # registros de decisión de arquitectura
+├── action.yml                 # GitHub Action reutilizable
+├── kit-iso.toml               # triaje del propio kit
+├── GUARDARRAILES.md           # reglas de ingeniería para quien desarrolla ESTE repo
+├── SECURITY.md                # divulgación responsable (CRA / ISO 29147)
+└── CHANGELOG.md
+```
 
-- `test_seguridad.py` — falla explícita sin clave, ciclo encriptar/desencriptar, **clave persistente entre instancias** (bug original: cada instancia generaba la suya → datos irrecuperables), detector de secretos sin falsos positivos.
-- `test_base_datos.py` — **commit en escrituras** (bug original), rollback, whitelist, context manager. BD mockeada.
-- `test_usabilidad.py` — validación de inputs y feedback.
-- `test_accesibilidad.py` — 18 tests, uno por criterio WCAG (detección y ausencia de falsos positivos). Test de integración con HTML completamente accesible.
-- `test_calidad.py` — 12 tests: rendimiento, complejidad simple vs compleja, umbrales configurables, medir_cobertura mockeado.
-- `test_seguridad.py` — ampliado a 30 tests: 7 patrones nuevos (Bearer, PEM, AWS, GitHub, Slack), entropía Shannon, argon2/bcrypt, security headers, TLS mockeado.
-
-CI en GitHub Actions: `ruff` + `black` + `bandit` + `pytest` en cada push/PR.
-
----
-
-## Dependencias
-
-| Paquete | Versión mínima | Uso |
-|---------|---------------|-----|
-| `cryptography` | 41.0.0 | Encriptación Fernet (ISO 27001) |
-| `psycopg2-binary` | 2.9.0 | Conector PostgreSQL |
-| `mysql-connector-python` | 8.0.0 | Conector MySQL |
-| `beautifulsoup4` | 4.12.0 | Parsing HTML (ISO 40500) |
-| `python-dotenv` | 1.0.0 | Variables de entorno (demo) |
-| `fastapi` / `uvicorn` | 0.109 / 0.27 | API de demostración |
-| `pytest` / `bandit` / `ruff` / `black` | — | Calidad y seguridad (dev) |
-| `radon` | 6.0.0 | Complejidad ciclomática McCabe (ISO 25010) |
-| `coverage` | 7.0.0 | Cobertura de tests (ISO 25010) |
-| `argon2-cffi` | 23.0.0 | Hashing de contraseñas argon2 (ISO 27001 A.9.4) |
-| `bcrypt` | 4.0.0 | Hashing de contraseñas bcrypt (ISO 27001 A.9.4) |
-
-> `torch`, `langchain` y `langgraph` se retiraron en v0.2.0: ningún módulo los usaba. Volverán solo si la implementación real de IA (Fase 3) los necesita.
+La suite tiene **249 tests** (pytest 8, Python 3.10–3.13); los que dependen de `argon2-cffi`, `bcrypt` o `radon` se saltan si no están instalados. CI en GitHub Actions: `ruff`, `black`, `bandit`, `pip-audit`, `mypy`, `pytest`, autoauditoría y prueba de la action. Convenciones de trabajo en [GUARDARRAILES.md](GUARDARRAILES.md); decisiones estructurales en [documentacion/adr/](documentacion/adr/README.md).
 
 ---
 
 ## Hoja de ruta
 
-Ver [PLAN-MEJORA.md](PLAN-MEJORA.md) y [CHANGELOG.md](CHANGELOG.md). Las cuatro fases están **completadas**:
+Versión actual: **1.1.0** (septiembre 2026). Historial completo en [CHANGELOG.md](CHANGELOG.md).
 
-- ✅ **Fase 1** (v0.2.0): corrección de 3 bugs críticos (clave Fernet persistente, commit/rollback en BD, módulo IA a stub explícito).
-- ✅ **Fase 2** (v0.3.0): profundización de normas existentes (8 patrones de secretos + entropía, argon2/bcrypt, security headers, TLS, WCAG de 1 a 6 criterios, complejidad y cobertura reales).
-- ✅ **Fase 3** (v0.4.0): módulos **AI Act** (art. 50, aplica desde el 2 de agosto de 2026), **CRA** (SBOM, divulgación de vulnerabilidades), ISO 42001/23894, 29147/30111, 27701 + 27017/27018, 25012 y 5055.
-- ✅ **Fase 4** (v1.0.0): CLI `kit-iso auditar` con informe consolidado, `CHANGELOG.md`, versionado semver y prueba final (el kit se audita a sí mismo).
+Siguiente fase (pendiente, sin fecha):
+
+- **`ens`**: valoración de las cinco dimensiones (confidencialidad, integridad, trazabilidad, autenticidad, disponibilidad), categoría del sistema y mapeo a las medidas del Anexo II.
+- **Seguridad de agentes y LLM** (OWASP Top 10 LLM): detección de inyección de prompt directa e indirecta, validación de la salida del modelo con esquema, inventario de herramientas con permisos mínimos, aprobación humana en acciones irreversibles, límites de iteraciones y coste.
+- **Trazabilidad a prueba de manipulación**: registro estructurado por ejecución encadenado con hashes, con retención definida.
+- **Borrado en cascada** (RGPD art. 17) con prueba de fuga entre usuarios.
+- **AI Act**: rol proveedor / responsable del despliegue, art. 22 y calendario del Reglamento (UE) 2026/1744.
+- **Plantillas de Fase 0**: ficha del sistema, clasificación de la información, análisis de riesgos, DPIA / ISO 42005, declaración de aplicabilidad, evaluación de proveedores.
 
 ---
 
-## Versión
-
-`1.0.0` — Julio 2026. Fase 4: **CLI `kit-iso auditar`** con 6 controles e informe Markdown/JSON (mapeo norma → control → evidencia → veredicto), exit codes para CI/CD, `CHANGELOG.md`, versionado semver y prueba final (el kit se audita a sí mismo). Historial completo en [CHANGELOG.md](CHANGELOG.md).
-
-`0.4.0` — Julio 2026. Fase 3: módulos `ai_act` (AI Act + ISO 42001/23894), `cra` (CRA + ISO 29147/30111), `privacidad` (ISO 27701 + 27017/27018), `iso_5055` (bandit → CWE) e `iso_25012` (calidad de datos); 68 → 156 tests.
-
-`0.3.0` — Julio 2026. Fase 2: `ValidadorSeguridad` con 8 patrones + entropía Shannon; `ValidadorContrasenasSeguras` (argon2/bcrypt); `ValidadorSecurityHeaders` (5 headers, valores validados); `ValidadorTLS`; WCAG ampliado de 1 a 6 criterios (1.1.1, 1.3.1, 1.4.3, 2.4.4, 3.1.1, 3.3.2); `HerramientasCalidad` con complejidad ciclomática (radon) y cobertura (coverage); 20 → 68 tests.
-
-`0.2.0` — Julio 2026. Fase 1: clave Fernet persistente, commit/rollback en BD, módulo IA a stub explícito, dependencias reducidas (~2 GB menos), 2 → 20 tests, CI con bandit.
+Licencia [MIT](LICENSE). Vulnerabilidades: ver [SECURITY.md](SECURITY.md).

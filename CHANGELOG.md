@@ -5,6 +5,35 @@ Versionado: [Semantic Versioning 2.0.0](https://semver.org/lang/es/)
 
 ---
 
+## [1.1.0] — 2026-09-15
+
+El kit pasa de repositorio aislado a **herramienta instalable en cualquier proyecto** y usable desde **cualquier agente de IA** (Claude Code, Codex, Cursor, OpenCode, Antigravity). Decisión de diseño en [ADR 0004](documentacion/adr/0004-perfiles-y-distribucion-multiagente.md).
+
+### Añadido
+
+- **`kit-iso init`**: triaje del proyecto (siete preguntas de sí/no) que genera `kit-iso.toml` con los módulos que aplican y la **justificación** de cada respuesta. `--detectar` pre-rellena las respuestas con heurísticas sobre el repositorio (HTML, drivers de BD, campos de datos personales, librerías de IA, empaquetado, datasets) y muestra la evidencia; `--perfil` (`minimo`, `web`, `api-datos-personales`, `agente-llm`, `producto-cra`, `sector-publico`) arranca sin preguntas; `--si` acepta las propuestas; `--solo-mostrar` no escribe nada. Idempotente: repetirlo conserva el triaje y refresca el resto.
+- **Skill `kit-iso`** en formato Agent Skills (`SKILL.md` con frontmatter), empaquetada en `kit_iso/recursos/` y copiada por `init` a `.claude/skills/`, `.cursor/skills/` y `.agents/skills/` (tres carpetas cubren los cinco agentes). `kit-iso skill [--global]` la instala por separado. Obliga al agente a leer `kit-iso.toml` antes de auditar y a pedir confirmación del triaje si no existe.
+- **Bloque en `AGENTS.md`** delimitado por `<!-- kit-iso:inicio/fin -->` (se inserta o reemplaza sin tocar contenido ajeno) y **`CLAUDE.md`** con `@AGENTS.md` para Claude Code.
+- **`action.yml`**: GitHub Action composite reutilizable (`uses: Jordiprof/Normas-ISO@v1.1.0`) que instala el kit, audita, vuelca el informe en el resumen del job y lo sube como artefacto. `kit-iso init --ci` genera el workflow que la usa.
+- **`kit-iso auditar` lee `kit-iso.toml`** (del directorio o sus padres, o `--config`) y marca los controles de módulos no activos como **`omitido`** (⏭️): quedan en el informe pero no cuentan como fallo. Los flags explícitos prevalecen sobre el archivo. El JSON incluye `modulos`, `config`, `pendientes` y `resumen.omitidos`.
+- **Módulo `perfiles`** (`detectar`, `cargar`, `guardar`, `Configuracion`) y **`instalador`** (`instalar_skill`, `instalar_agents_md`, `instalar_claude_md`, `instalar_workflow`) como API pública.
+- **Extras de instalación**: `kit-iso[auditoria]` (bandit + radon) y `kit-iso[bd]` (drivers PostgreSQL/MySQL). `tomli` solo en Python 3.10.
+- **`kit-iso.toml` del propio repositorio**: el kit se audita a sí mismo con su propio mecanismo (4/4 controles aplicables, 2 omitidos con motivo).
+- **CI**: matriz Python 3.10/3.12, `pip-audit`, autoauditoría con `kit-iso auditar .` y prueba de la action contra el propio repo.
+- Tests: 174 → **249** (`test_perfiles.py`, `test_instalador.py`, CLI `init`/`skill`/`auditar` con toml).
+
+### Cambiado
+
+- **Los drivers de base de datos ya no son dependencia obligatoria**: `base_datos` los importa de forma tolerante y `BaseDatosSegura` falla con instrucción de instalación (`pip install "kit-iso[bd]"`) si faltan. Instalar el kit en un proyecto ya no arrastra `psycopg2` ni `mysql-connector`.
+- **bandit se invoca con el intérprete actual** (`python -m bandit`), respeta `excluir` (`-x`) y tolera la barra de progreso que escribe en stdout con muchos archivos. El control CWE propaga el mensaje de error real en vez de un estado `error` mudo.
+- **README** reescrito: instalación en otro proyecto, uso con agentes, triaje, CLI, CI, tabla de normas con resumen de una línea, estructura del repo y hoja de ruta.
+- **`requirements.txt`** ahora solo para desarrollar el kit (equivale a `pip install -e ".[dev,auditoria,demo]"`).
+- Refactor de complejidad (umbral 10 del propio kit): `ejecutar_auditoria`, `generar_markdown`, `_sin_docstrings`, `cmd_auditar`, `AnalizadorISO5055.analizar_directorio`, `ValidadorCalidadDatos.validar_exactitud`, `perfiles.indicadores`. Sin cambios de comportamiento.
+
+### Eliminado
+
+- `PLAN-MEJORA.md` (historial ya recogido aquí; la hoja de ruta vive en el README) y el `SKILL.md` de la raíz (desactualizado: apuntaba al stub `kit_iso.ia` e ignoraba seis módulos). La skill vive ahora en el paquete.
+
 ## [1.0.2] — 2026-07-16
 
 Arregla el CI, que empezó a fallar al pushear todo el trabajo de las Fases 2-4 por primera vez (el workflow existía desde la Fase 1, pero nunca había corrido contra este código en un entorno limpio). Sin cambios de comportamiento.

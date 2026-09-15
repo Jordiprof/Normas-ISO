@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kit-iso"
-version = "1.0.2"
+version = "1.1.0"
 description = "Controles técnicos automatizables para cumplimiento normativo (ISO 27001, 25010, 9241, 40500, AI Act, CRA)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -37,16 +37,27 @@ classifiers = [
 ]
 dependencies = [
     "cryptography>=41.0.0",
-    "psycopg2-binary>=2.9.0",
-    "mysql-connector-python>=8.0.0",
     "beautifulsoup4>=4.12.0",
+    "tomli>=2.0.0; python_version < '3.11'",
 ]
 
 [project.urls]
 Repository = "https://github.com/Jordiprof/Normas-ISO"
 Changelog = "https://github.com/Jordiprof/Normas-ISO/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/Jordiprof/Normas-ISO#readme"
+Issues = "https://github.com/Jordiprof/Normas-ISO/issues"
 
 [project.optional-dependencies]
+# Controles de `kit-iso auditar` que dependen de herramientas externas (CWE y complejidad).
+auditoria = [
+    "bandit>=1.7.0",
+    "radon>=6.0.0",
+]
+# Drivers de BaseDatosSegura.
+bd = [
+    "psycopg2-binary>=2.9.0",
+    "mysql-connector-python>=8.0.0",
+]
 dev = [
     "pytest>=7.0.0",
     "bandit>=1.7.0",
@@ -57,6 +68,9 @@ dev = [
     "argon2-cffi>=23.0.0",
     "bcrypt>=4.0.0",
     "mypy>=1.8.0",
+    "pip-audit>=2.7.0",
+    "psycopg2-binary>=2.9.0",
+    "mysql-connector-python>=8.0.0",
 ]
 demo = [
     "fastapi>=0.109.0",
@@ -71,7 +85,7 @@ kit-iso = "kit_iso.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-kit_iso = ["py.typed"]
+kit_iso = ["py.typed", "recursos/*.md", "recursos/*.yml", "recursos/skill/*/SKILL.md"]
 
 [tool.ruff]
 line-length = 100

@@ -3,6 +3,21 @@
 import re
 
 
+def _errores_de_valor(valor, reglas: dict) -> list[str]:
+    """Aplica las reglas de exactitud (tipo, min, max, patron) a un valor no nulo."""
+    tipo = reglas.get("tipo")
+    if tipo and not isinstance(valor, tipo):
+        return [f"tipo esperado {tipo.__name__}, recibido {type(valor).__name__}"]
+    errores = []
+    if "min" in reglas and valor < reglas["min"]:
+        errores.append(f"valor {valor} < mínimo {reglas['min']}")
+    if "max" in reglas and valor > reglas["max"]:
+        errores.append(f"valor {valor} > máximo {reglas['max']}")
+    if "patron" in reglas and isinstance(valor, str) and not re.match(reglas["patron"], valor):
+        errores.append(f"valor '{valor}' no coincide con el patrón")
+    return errores
+
+
 class ValidadorCalidadDatos:
     """Valida la calidad de datasets o colecciones de registros según ISO 25012.
 
@@ -101,44 +116,10 @@ class ValidadorCalidadDatos:
                 valor = registro.get(campo)
                 if valor is None:
                     continue  # la completitud lo valida aparte
-                tipo = reglas.get("tipo")
-                if tipo and not isinstance(valor, tipo):
-                    errores.append(
-                        {
-                            "indice": i,
-                            "campo": campo,
-                            "error": f"tipo esperado {tipo.__name__}, recibido {type(valor).__name__}",
-                        }
-                    )
-                    continue
-                if "min" in reglas and valor < reglas["min"]:
-                    errores.append(
-                        {
-                            "indice": i,
-                            "campo": campo,
-                            "error": f"valor {valor} < mínimo {reglas['min']}",
-                        }
-                    )
-                if "max" in reglas and valor > reglas["max"]:
-                    errores.append(
-                        {
-                            "indice": i,
-                            "campo": campo,
-                            "error": f"valor {valor} > máximo {reglas['max']}",
-                        }
-                    )
-                if (
-                    "patron" in reglas
-                    and isinstance(valor, str)
-                    and not re.match(reglas["patron"], valor)
-                ):
-                    errores.append(
-                        {
-                            "indice": i,
-                            "campo": campo,
-                            "error": f"valor '{valor}' no coincide con el patrón",
-                        }
-                    )
+                errores += [
+                    {"indice": i, "campo": campo, "error": e}
+                    for e in _errores_de_valor(valor, reglas)
+                ]
 
         total = len(registros)
         indices_error = {e["indice"] for e in errores}

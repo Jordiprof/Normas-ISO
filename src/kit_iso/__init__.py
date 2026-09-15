@@ -24,7 +24,7 @@ from .seguridad import ToolkitSeguridad
 from .usabilidad import HerramientasUsabilidad
 
 __all__ = ["BaseDatosSegura", "HerramientasUsabilidad", "ToolkitSeguridad"]
-__version__ = "1.0.2"
+__version__ = "1.1.0"
 
 # NullHandler: una librería nunca configura el logging global (basicConfig);
 # eso es responsabilidad de la aplicación que la usa.

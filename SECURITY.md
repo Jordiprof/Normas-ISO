@@ -34,5 +34,6 @@ Abre un [GitHub Security Advisory](https://github.com/jordiprof/kit-cumplimiento
 
 | Versión | Soporte de seguridad |
 |---------|---------------------|
-| 1.0.x   | ✅ Activo |
+| 1.1.x   | ✅ Activo |
+| 1.0.x   | ⚠️ Solo correcciones críticas hasta 2026-12-31 |
 | < 1.0   | ❌ Sin soporte |

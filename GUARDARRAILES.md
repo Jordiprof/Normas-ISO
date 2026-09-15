@@ -2,6 +2,8 @@
 
 Este archivo mantiene los **guardarrailes de ingeniería** siempre en contexto para cualquier agente de IA que trabaje en este proyecto. Generado por la skill `guardarrailes` (`/guardarrailes instalar`).
 
+> **Ámbito:** este archivo es para quien **desarrolla este repositorio**. Los proyectos que *instalan* el kit no lo reciben: reciben el bloque de `AGENTS.md` y la skill `kit-iso` que genera `kit-iso init` (ver README → Uso con agentes de IA).
+
 Es un **router**: para cada situación indica qué disciplina manda. El detalle de cada regla vive en la skill del mismo nombre (`base-ingenieria`, `pruebas-y-verificacion`, etc.) si está instalada; este archivo es autocontenido y funciona aunque no lo estén.
 
 ---
@@ -50,7 +52,7 @@ _Declarado con `/guardarrailes declarar` el 2026-07-16._
 |---|---|---|
 | base-ingenieria | ✅ | Estándar por defecto en todo `src/`. |
 | seguridad-y-privacidad | ✅ **central** | Es el dominio del propio kit: Fernet con clave persistente, SQL parametrizado, detección de PII, hashing argon2/bcrypt. La postura de seguridad es producto, no solo higiene. |
-| pruebas-y-verificacion | ✅ | Suite en `pruebas/` (177 pasan). Regla clave aquí: el kit no declara una norma "cumplida" sin un control automatizable que lo verifique. |
+| pruebas-y-verificacion | ✅ | Suite en `pruebas/` (ver README → Tests). Regla clave aquí: el kit no declara una norma "cumplida" sin un control automatizable que lo verifique. |
 | arquitectura-y-diseno | ✅ | Un módulo por norma; `_auditoria.py` separado de `cli.py` para testabilidad. |
 | calidad-codigo | ✅ | ruff + black en CI. |
 | apis-e-interfaces | ✅ | Doble contrato: la CLI (`kit-iso auditar`, flags, exit codes) y la API pública de la librería (clases validadoras). Versionado semver desde v1.0.0. |

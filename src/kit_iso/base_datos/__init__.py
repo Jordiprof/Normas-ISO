@@ -3,8 +3,16 @@
 import logging
 from typing import Any
 
-import mysql.connector
-import psycopg2
+# Los drivers son opcionales (extra `kit-iso[bd]`): importar el kit no debe exigirlos.
+# ImportError cubre también "DLL load failed" en Windows con políticas de control de aplicaciones.
+try:
+    import psycopg2
+except ImportError:  # pragma: no cover — depende del entorno
+    psycopg2 = None
+try:
+    import mysql.connector
+except ImportError:  # pragma: no cover — depende del entorno
+    mysql = None  # type: ignore[assignment]
 
 # Import relativo: evita la dependencia circular con kit_iso/__init__.py.
 from ..seguridad import ToolkitSeguridad
@@ -15,6 +23,11 @@ logger = logging.getLogger(__name__)
 # Los identificadores no se pueden parametrizar, así que se validan contra esta lista.
 TABLAS_PERMITIDAS = {"usuarios", "registros", "auditorias", "documentos"}
 COLUMNAS_PERMITIDAS = {"datos", "contenido", "valor", "texto"}
+
+_MSG_DRIVER = (
+    "El driver '{driver}' no está disponible. Instala el extra de base de datos: "
+    'pip install "kit-iso[bd]"'
+)
 
 
 class BaseDatosSegura:
@@ -51,10 +64,14 @@ class BaseDatosSegura:
 
     def _conectar(self, host, usuario, password, nombre_bd):
         if self.tipo_bd == "postgres":
+            if psycopg2 is None:
+                raise ImportError(_MSG_DRIVER.format(driver="psycopg2"))
             self.conexion = psycopg2.connect(
                 host=host, user=usuario, password=password, dbname=nombre_bd
             )
         elif self.tipo_bd == "mysql":
+            if mysql is None:
+                raise ImportError(_MSG_DRIVER.format(driver="mysql.connector"))
             self.conexion = mysql.connector.connect(
                 host=host, user=usuario, password=password, database=nombre_bd
             )

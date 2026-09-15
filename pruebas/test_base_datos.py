@@ -14,9 +14,10 @@ def _toolkit():
 
 
 def _db_con_mock(**kwargs):
-    with patch("kit_iso.base_datos.psycopg2.connect") as connect:
+    # Se parchea el módulo entero: en entornos sin el driver instalado es None.
+    with patch("kit_iso.base_datos.psycopg2") as driver:
         conexion = MagicMock()
-        connect.return_value = conexion
+        driver.connect.return_value = conexion
         db = BaseDatosSegura("postgres", "h", "u", "p", "bd", seguridad=_toolkit(), **kwargs)
     return db, conexion
 
@@ -66,10 +67,18 @@ def test_tipo_bd_invalido_falla_claro():
         BaseDatosSegura("oracle", "h", "u", "p", "bd", seguridad=_toolkit())
 
 
+def test_sin_driver_falla_con_instruccion_de_instalacion():
+    with (
+        patch("kit_iso.base_datos.psycopg2", None),
+        pytest.raises(ImportError, match=r"kit-iso\[bd\]"),
+    ):
+        BaseDatosSegura("postgres", "h", "u", "p", "bd", seguridad=_toolkit())
+
+
 def test_context_manager_cierra_conexion():
-    with patch("kit_iso.base_datos.psycopg2.connect") as connect:
+    with patch("kit_iso.base_datos.psycopg2") as driver:
         conexion = MagicMock()
-        connect.return_value = conexion
+        driver.connect.return_value = conexion
         with BaseDatosSegura("postgres", "h", "u", "p", "bd", seguridad=_toolkit()):
             pass
     conexion.close.assert_called_once()
