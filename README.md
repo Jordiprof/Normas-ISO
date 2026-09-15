@@ -39,6 +39,12 @@ Fija siempre un tag (`@v1.1.0`): así cada proyecto actualiza cuando decide.
 
 > El repositorio es **privado**: `pip` clona con tus credenciales de git. Basta con tener sesión en GitHub CLI (`gh auth login` y `gh auth setup-git`) o un token con permiso `repo` en el gestor de credenciales.
 
+**Desde una copia local** del kit (sin pasar por GitHub; con `-e` los cambios que hagas en el kit se reflejan al instante):
+
+```bash
+pip install "D:/dev/projects/normas-iso[auditoria]"
+```
+
 Extras disponibles:
 
 | Extra | Instala | Cuándo |
